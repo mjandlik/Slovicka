@@ -175,10 +175,19 @@
 
   <!-- ============ WORD LIST ============ -->
   <section id="view-list" class="hidden">
+    <div id="backupBanner" class="hidden" style="background:var(--surface-2);border:1px solid var(--accent);border-radius:12px;padding:11px 13px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <span style="flex:1;font-size:14px;line-height:1.35;">Máš nezálohované změny.</span>
+      <button class="btn" style="margin:0;width:auto;padding:9px 15px;font-size:14px;" onclick="exportWords()">Zálohovat</button>
+    </div>
     <div class="stats">
       <div class="stat s-learn"><b id="stLearn">0</b><small>učím se</small></div>
       <div class="stat s-almost"><b id="stAlmost">0</b><small>skoro</small></div>
       <div class="stat s-known"><b id="stKnown">0</b><small>umím</small></div>
+    </div>
+    <div style="display:flex;gap:8px;margin:0 0 14px;">
+      <button class="btn ghost" style="margin:0;font-size:14px;padding:11px;flex:1;" onclick="exportWords()">⬇ Záloha</button>
+      <button class="btn ghost" style="margin:0;font-size:14px;padding:11px;flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
+      <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
     </div>
     <div class="listhead">
       <h2>Moje slovíčka</h2>
@@ -240,7 +249,13 @@
 const KEY='slovicka_v1';
 let words=load();
 function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
-function save(){localStorage.setItem(KEY,JSON.stringify(words));}
+function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();}
+function updateBackupBanner(){
+  const b=document.getElementById('backupBanner');if(!b)return;
+  const changed=+(localStorage.getItem(KEY+'_changed')||0);
+  const backup=+(localStorage.getItem(KEY+'_backup')||0);
+  b.classList.toggle('hidden', !(words.length>0 && changed>backup));
+}
 
 /* ---------- Toast ---------- */
 let toastT;
@@ -348,6 +363,68 @@ function renderList(){
 }
 function delWord(id){words=words.filter(w=>w.id!==id);save();renderList();}
 function esc(s){return s.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+/* ---------- Backup: export + two-way Sync ---------- */
+function exportWords(silent){
+  if(!words.length){if(!silent)toast('Nejsou žádná slovíčka');return;}
+  const blob=new Blob([JSON.stringify(words,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(url);
+  localStorage.setItem(KEY+'_backup',String(Date.now()));
+  updateBackupBanner();
+  if(!silent)toast('Záloha stažena');
+}
+// Two-way merge: union of file + app; for the same word the newer progress wins.
+function mergeWords(incoming){
+  const keyOf=w=>String(w.en).toLowerCase();
+  const map=new Map();
+  words.forEach(w=>map.set(keyOf(w),w));
+  let added=0;
+  incoming.forEach(it=>{
+    if(!it||!it.en||!it.cs)return;
+    const norm={
+      id: it.id||(Date.now()+Math.floor(Math.random()*100000)),
+      en:String(it.en), cs:String(it.cs),
+      box:[1,2,3].includes(it.box)?it.box:1,
+      added:it.added||Date.now(),
+      due:it.due||Date.now(),
+      lastReviewed:it.lastReviewed||null
+    };
+    const k=keyOf(norm);
+    if(!map.has(k)){map.set(k,norm);added++;}
+    else{
+      const cur=map.get(k);
+      if((norm.lastReviewed||0) > (cur.lastReviewed||0)){ // incoming reviewed more recently
+        map.set(k,{...norm, id:cur.id, added:Math.min(cur.added||norm.added, norm.added||cur.added)});
+      }
+    }
+  });
+  words=[...map.values()].sort((a,b)=>(b.added||0)-(a.added||0));
+  return added;
+}
+function syncWords(ev){
+  const file=ev.target.files&&ev.target.files[0];
+  ev.target.value='';
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(){
+    try{
+      const arr=JSON.parse(reader.result);
+      if(!Array.isArray(arr)) throw new Error('bad');
+      const added=mergeWords(arr);
+      save();renderList();
+      exportWords(true); // save fresh merged backup
+      toast('Sync hotový: +'+added+' nových, celkem '+words.length);
+    }catch(e){
+      toast('Soubor se nepodařilo načíst');
+    }
+  };
+  reader.readAsText(file);
+}
 
 /* ---------- Learning (Leitner spaced repetition) ---------- */
 // Days until a word is offered again, by category after rating.
@@ -489,7 +566,8 @@ function show(v){
 }
 
 /* ---------- init ---------- */
-refreshLabels();renderList();
+if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
+refreshLabels();renderList();updateBackupBanner();
 document.getElementById('src').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();translateNow();}});
 </script>
 </body>
