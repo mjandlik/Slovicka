@@ -154,7 +154,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v9</span>
+  <span class="tag">EN · CS · v10</span>
 </header>
 
 <div class="wrap">
@@ -316,19 +316,19 @@ async function translateNow(){
   try{
     let res;
     if(from==='cs'){
-      // 1) auto pass: may translate + may offer a diacritics correction
-      const a=await translateText(text,'auto',to);
-      if(a.corrected && a.corrected!==text && stripDia(a.corrected)===stripDia(text)){
-        // adopt corrected word and translate it reliably as Czech
-        text=a.corrected;
-        document.getElementById('src').value=text;
-        toast('Doplněna diakritika');
-        res=await translateText(text,'cs',to);
-      }else if(a.text){
-        res=a;
-      }else{
-        // auto didn't translate (e.g. missing diacritics) → force Czech engine
-        res=await translateText(text,'cs',to);
+      // Force Czech engine — it translates even without diacritics (auto-detect fails on "lizat").
+      res=await translateText(text,'cs',to);
+      // Restore diacritics via round-trip: EN result back to CS; adopt only if it's the SAME word.
+      if(res.text){
+        try{
+          const back=await translateText(res.text,'en','cs');
+          const bt=(back.text||'').trim();
+          if(bt && bt!==text && stripDia(bt)===stripDia(text)){
+            text=bt;
+            document.getElementById('src').value=text;
+            toast('Doplněna diakritika');
+          }
+        }catch(e){/* diacritics is best-effort */}
       }
     }else{
       res=await translateText(text,from,to);
