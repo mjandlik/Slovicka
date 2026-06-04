@@ -160,7 +160,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v12</span>
+  <span class="tag">EN · CS · v13</span>
 </header>
 
 <div class="wrap">
@@ -281,7 +281,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 let from='cs',to='en';
 const LANGNAME={cs:'češtině',en:'angličtině'};
 function setDir(f,t){from=f;to=t;document.getElementById('dirA').classList.toggle('on',f==='cs');document.getElementById('dirB').classList.toggle('on',f==='en');refreshLabels();}
-function swapDir(){setDir(to,from);const s=document.getElementById('src');s.value=(current&&current.options&&current.options[0])?current.options[0]:s.value;}
+function swapDir(){setDir(to,from);const s=document.getElementById('src');s.value=(current&&current.options&&current.options[0])?current.options[0].word:s.value;}
 function refreshLabels(){
   document.getElementById('srcLabel').textContent='Zadej text v '+LANGNAME[from];
   document.getElementById('outLabel').textContent='Překlad do '+LANGNAME[to];
