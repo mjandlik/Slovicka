@@ -160,7 +160,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v13</span>
+  <span class="tag">EN · CS · v14</span>
 </header>
 
 <div class="wrap">
@@ -331,6 +331,17 @@ function buildOptions(primary, alts){
   (alts||[]).forEach(a=>push(a.word,a.pos));
   return out.slice(0,8);
 }
+// Translate; if the result just echoes the input (e.g. capitalized words treated
+// as proper nouns), retry with a lowercased query.
+async function smartTranslate(text, sl, tgt){
+  let r=await translateText(text, sl, tgt);
+  const echoed = !r.text || r.text.toLowerCase()===text.toLowerCase();
+  if(echoed && text!==text.toLowerCase()){
+    const r2=await translateText(text.toLowerCase(), sl, tgt);
+    if(r2.text && r2.text.toLowerCase()!==text.toLowerCase()) return r2;
+  }
+  return r;
+}
 
 async function translateNow(){
   let text=document.getElementById('src').value.trim();
@@ -343,7 +354,7 @@ async function translateNow(){
     let res;
     if(from==='cs'){
       // Force Czech engine — it translates even without diacritics (auto-detect fails on "lizat").
-      res=await translateText(text,'cs',to);
+      res=await smartTranslate(text,'cs',to);
       // Restore diacritics via round-trip: EN result back to CS; adopt only if it's the SAME word.
       if(res.text){
         try{
@@ -357,7 +368,7 @@ async function translateNow(){
         }catch(e){/* diacritics is best-effort */}
       }
     }else{
-      res=await translateText(text,from,to);
+      res=await smartTranslate(text,from,to);
     }
     if(!res || !res.text) throw new Error('no result');
     out.classList.remove('empty');
