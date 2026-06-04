@@ -297,12 +297,11 @@ async function translateText(text,src,tgt){
   if(Array.isArray(d)&&Array.isArray(d[0])){
     out=d[0].map(seg=>seg&&seg[0]?seg[0]:'').join('').trim();
   }
-  if(!out) throw new Error('no result');
   let corrected='';
   if(Array.isArray(d[7]) && d[7][0]){
     corrected=String(d[7][0]).replace(/<[^>]+>/g,'').trim(); // strip <b><i> markup → corrected text
   }
-  return {text:out, corrected};
+  return {text:out, corrected}; // note: out may be empty if only a correction was offered
 }
 
 async function translateNow(){
@@ -313,14 +312,16 @@ async function translateNow(){
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Překládám…';
   out.classList.add('empty');out.textContent='…';
   try{
-    const res=await translateText(text,from,to);
-    // If translating FROM Czech and Google fixed only the diacritics/case
-    // of the SAME word, fill the corrected form back into the input.
+    let res=await translateText(text,from,to);
+    // From Czech: if Google suggests the SAME word with diacritics (e.g. lizat→lízat),
+    // adopt the corrected form and translate THAT (the raw form may not translate well).
     if(from==='cs' && res.corrected && res.corrected!==text && stripDia(res.corrected)===stripDia(text)){
       text=res.corrected;
       document.getElementById('src').value=text;
       toast('Doplněna diakritika');
+      res=await translateText(text,from,to);
     }
+    if(!res.text) throw new Error('no result');
     out.classList.remove('empty');
     out.textContent=res.text;
     current={source:text,target:res.text,from,to};
