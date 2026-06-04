@@ -90,7 +90,9 @@
   .listhead{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px;}
   .listhead h2{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin:0;}
   .stats{display:flex;gap:8px;margin-bottom:14px;}
-  .stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px;text-align:center;}
+  .stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px;text-align:center;cursor:pointer;user-select:none;opacity:.4;transition:opacity .15s,border-color .15s;}
+  .stat.on{opacity:1;}
+  .stat.s-learn.on{border-color:var(--c-learn);} .stat.s-almost.on{border-color:var(--c-almost);} .stat.s-known.on{border-color:var(--c-known);} .stat.s-done.on{border-color:var(--c-done);}
   .stat b{display:block;font-family:'Fraunces',serif;font-size:24px;line-height:1;}
   .stat small{font-size:11px;color:var(--ink-soft);letter-spacing:.3px;}
   .s-learn b{color:var(--c-learn);} .s-almost b{color:var(--c-almost);} .s-known b{color:var(--c-known);} .s-done b{color:var(--c-done);}
@@ -163,7 +165,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v18</span>
+  <span class="tag">EN · CS · v20</span>
 </header>
 
 <div class="wrap">
@@ -191,10 +193,10 @@
       <button class="btn" style="margin:0;width:auto;padding:9px 15px;font-size:14px;" onclick="exportWords()">Zálohovat</button>
     </div>
     <div class="stats">
-      <div class="stat s-learn"><b id="stLearn">0</b><small>učím se</small></div>
-      <div class="stat s-almost"><b id="stAlmost">0</b><small>skoro</small></div>
-      <div class="stat s-known"><b id="stKnown">0</b><small>umím</small></div>
-      <div class="stat s-done"><b id="stDone">0</b><small>naučeno</small></div>
+      <div class="stat s-learn" id="stat1" onclick="toggleBoxFilter(1)"><b id="stLearn">0</b><small>učím se</small></div>
+      <div class="stat s-almost" id="stat2" onclick="toggleBoxFilter(2)"><b id="stAlmost">0</b><small>skoro</small></div>
+      <div class="stat s-known" id="stat3" onclick="toggleBoxFilter(3)"><b id="stKnown">0</b><small>umím</small></div>
+      <div class="stat s-done" id="stat4" onclick="toggleBoxFilter(4)"><b id="stDone">0</b><small>naučeno</small></div>
     </div>
     <div style="display:flex;gap:8px;margin:0 0 14px;">
       <button class="btn ghost" style="margin:0;font-size:14px;padding:11px;flex:1;" onclick="exportWords()">⬇ Záloha</button>
@@ -279,20 +281,19 @@ let toastT;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 /* ---------- Speech (pronunciation) ---------- */
-let _voices=[];
-function loadVoices(){try{_voices=window.speechSynthesis.getVoices()||[];}catch(e){}}
+function loadVoices(){try{window.speechSynthesis.getVoices();}catch(e){}}
 function speak(text,lang){
   text=(text||'').trim();if(!text)return;
-  if(!('speechSynthesis' in window)){toast('Předčítání nepodporováno');return;}
-  try{
-    window.speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    lang=lang||'en-US';u.lang=lang;u.rate=0.95;
-    const pref=lang.slice(0,2).toLowerCase();
-    const v=_voices.find(x=>x.lang&&x.lang.toLowerCase().startsWith(pref));
-    if(v)u.voice=v;
-    window.speechSynthesis.speak(u);
-  }catch(e){}
+  const synth=window.speechSynthesis;
+  if(!synth){toast('Předčítání nepodporováno');return;}
+  try{synth.cancel();}catch(e){}
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=lang||'en-US';
+  u.rate=0.95;u.pitch=1;u.volume=1;
+  // Note: deliberately NOT setting u.voice — on Android picking a voice can silence it.
+  try{synth.speak(u);}catch(e){toast('Výslovnost se nepodařila');return;}
+  // Chrome on Android sometimes leaves synthesis paused — nudge it.
+  setTimeout(()=>{try{if(synth.paused)synth.resume();}catch(e){}},150);
 }
 function speakOption(i){if(!current||!current.options)return;const o=current.options[i];if(!o)return;speak(o.word, current.from==='cs'?'en-US':'cs-CZ');}
 function speakCard(){const w=queue[qi];if(w)speak(w.en,'en-US');}
@@ -433,6 +434,8 @@ function savePair(i){
 /* ---------- Word list ---------- */
 const BOXNAME={1:'učím se',2:'skoro',3:'umím',4:'naučeno'};
 const BOXVAR={1:'var(--c-learn)',2:'var(--c-almost)',3:'var(--c-known)',4:'var(--c-done)'};
+let boxFilter={1:true,2:true,3:true,4:true};
+function toggleBoxFilter(b){boxFilter[b]=!boxFilter[b];renderList();}
 function renderList(){
   const c={1:0,2:0,3:0,4:0};words.forEach(w=>c[w.box]=(c[w.box]||0)+1);
   document.getElementById('stLearn').textContent=c[1];
@@ -440,11 +443,12 @@ function renderList(){
   document.getElementById('stKnown').textContent=c[3];
   document.getElementById('stDone').textContent=c[4];
   document.getElementById('totalCount').textContent=words.length;
+  [1,2,3,4].forEach(b=>{const el=document.getElementById('stat'+b);if(el)el.classList.toggle('on',!!boxFilter[b]);});
   const list=document.getElementById('wordList');
   if(!words.length){list.innerHTML='<div class="empty-note">Žádná slovíčka.<br>Přelož něco a ulož si to.</div>';return;}
   const qEl=document.getElementById('listSearch');
   const q=qEl?stripDia(qEl.value):'';
-  const shown=q ? words.filter(w=>stripDia(w.en).includes(q)||stripDia(w.cs).includes(q)) : words;
+  const shown=words.filter(w=>boxFilter[w.box] && (!q || stripDia(w.en).includes(q)||stripDia(w.cs).includes(q)));
   if(!shown.length){list.innerHTML='<div class="empty-note">Nic nenalezeno.</div>';return;}
   list.innerHTML=shown.map(w=>`
     <div class="item">
