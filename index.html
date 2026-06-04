@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#14110f">
+<meta name="theme-color" content="#100d0b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Slovíčka EN">
@@ -13,18 +13,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#14110f; --surface:#1f1b18; --surface-2:#2a2521;
-    --ink:#f0e9e0; --ink-soft:#b6ada1; --ink-faint:#7d756b;
-    --accent:#f0a830; --accent-ink:#1a1510;
-    --c-learn:#e5705a; --c-almost:#f0a830; --c-known:#79b56e;
-    --line:#34302b;
+    --bg:#100d0b; --surface:#191412; --surface-2:#211a16;
+    --ink:#e6d9c8; --ink-soft:#a1937f; --ink-faint:#6b6053;
+    --accent:#bd824a; --accent-ink:#160f08;
+    --c-learn:#d3614a; --c-almost:#dd8f33; --c-known:#9aa658; --c-done:#c08a52;
+    --line:#2e2823;
     --radius:18px;
-    --shadow:0 10px 30px rgba(0,0,0,.45);
+    --shadow:0 10px 30px rgba(0,0,0,.55);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
-    background:radial-gradient(120% 80% at 50% -10%, #221c17 0%, var(--bg) 60%);
+    background:radial-gradient(120% 80% at 50% -10%, #1c1612 0%, var(--bg) 55%);
     color:var(--ink);
     font-family:'Hanken Grotesk',system-ui,sans-serif;
     min-height:100dvh;
@@ -84,7 +84,7 @@
   .stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px;text-align:center;}
   .stat b{display:block;font-family:'Fraunces',serif;font-size:24px;line-height:1;}
   .stat small{font-size:11px;color:var(--ink-soft);letter-spacing:.3px;}
-  .s-learn b{color:var(--c-learn);} .s-almost b{color:var(--c-almost);} .s-known b{color:var(--c-known);}
+  .s-learn b{color:var(--c-learn);} .s-almost b{color:var(--c-almost);} .s-known b{color:var(--c-known);} .s-done b{color:var(--c-done);}
 
   .item{
     background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;
@@ -105,6 +105,11 @@
   }
   .flash .side-label{position:absolute;top:14px;left:0;right:0;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);}
   .flash .word{font-family:'Fraunces',serif;font-size:34px;font-weight:600;line-height:1.15;letter-spacing:-.5px;}
+  .flash .word.anim{animation:cardin .22s ease;}
+  @keyframes cardin{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+  .streak{display:flex;justify-content:center;margin-bottom:12px;}
+  .streak span{background:var(--surface);border:1px solid var(--line);border-radius:30px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--ink-soft);}
+  .streak b{color:var(--accent);}
   .flash .hint{margin-top:16px;font-size:13px;color:var(--ink-faint);}
   .flash .badge{position:absolute;top:14px;right:16px;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;}
 
@@ -183,6 +188,7 @@
       <div class="stat s-learn"><b id="stLearn">0</b><small>učím se</small></div>
       <div class="stat s-almost"><b id="stAlmost">0</b><small>skoro</small></div>
       <div class="stat s-known"><b id="stKnown">0</b><small>umím</small></div>
+      <div class="stat s-done"><b id="stDone">0</b><small>naučeno</small></div>
     </div>
     <div style="display:flex;gap:8px;margin:0 0 14px;">
       <button class="btn ghost" style="margin:0;font-size:14px;padding:11px;flex:1;" onclick="exportWords()">⬇ Záloha</button>
@@ -207,6 +213,7 @@
       <button class="btn ghost" style="max-width:260px;margin:18px auto 0;" onclick="startLearn(true)">Procvičit vše stejně</button>
     </div>
     <div id="learnArea" class="hidden">
+      <div class="streak" id="streakChip"></div>
       <div class="dir" id="learnDirRow" style="margin-bottom:14px;">
         <button id="ldA" class="on" onclick="setLearnDir('en')">Anglicky → Česky</button>
         <button id="ldB" onclick="setLearnDir('cs')">Česky → Anglicky</button>
@@ -227,9 +234,10 @@
         <button class="r-almost" onclick="rate(2)">Skoro<small>skoro</small></button>
         <button class="r-known" onclick="rate(3)">Umím<small>hotovo</small></button>
       </div>
+      <button class="btn ghost hidden" id="retireBtn" style="margin-top:8px;font-size:14px;padding:11px;" onclick="rate(4)">✓ Naučeno – už nenabízet</button>
     </div>
     <div id="learnDone" class="empty-note hidden">
-      Hotovo! 🎉<br>Prošel jsi vše, co bylo na řadě.
+      <div id="doneMsg">Hotovo! 🎉</div>
       <button class="btn ghost" style="max-width:260px;margin:18px auto 0;" onclick="startLearn(true)">Procvičit vše znovu</button>
     </div>
   </section>
@@ -341,13 +349,14 @@ function saveCurrent(){
 }
 
 /* ---------- Word list ---------- */
-const BOXNAME={1:'učím se',2:'skoro',3:'umím'};
-const BOXVAR={1:'var(--c-learn)',2:'var(--c-almost)',3:'var(--c-known)'};
+const BOXNAME={1:'učím se',2:'skoro',3:'umím',4:'naučeno'};
+const BOXVAR={1:'var(--c-learn)',2:'var(--c-almost)',3:'var(--c-known)',4:'var(--c-done)'};
 function renderList(){
-  const c={1:0,2:0,3:0};words.forEach(w=>c[w.box]++);
+  const c={1:0,2:0,3:0,4:0};words.forEach(w=>c[w.box]=(c[w.box]||0)+1);
   document.getElementById('stLearn').textContent=c[1];
   document.getElementById('stAlmost').textContent=c[2];
   document.getElementById('stKnown').textContent=c[3];
+  document.getElementById('stDone').textContent=c[4];
   document.getElementById('totalCount').textContent=words.length;
   const list=document.getElementById('wordList');
   if(!words.length){list.innerHTML='<div class="empty-note">Žádná slovíčka.<br>Přelož něco a ulož si to.</div>';return;}
@@ -447,12 +456,39 @@ function syncWords(ev){
 // Days until a word is offered again, by category after rating.
 const INTERVAL_DAYS={1:1,2:3,3:7};
 const DAY_MS=86400000;
-let queue=[],qi=0,flipped=false,learnDir='en'; // 'en' = EN→CS (front English), 'cs' = CS→EN (front Czech)
+let queue=[],qi=0,flipped=false,learnDir='en',reviewedThisSession=0; // 'en' = EN→CS, 'cs' = CS→EN
+/* --- Streak (consecutive study days) --- */
+function todayStr(){return new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function yesterdayStr(){return new Date(Date.now()-DAY_MS-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function getStreak(){
+  const last=localStorage.getItem(KEY+'_lastday');
+  const streak=+(localStorage.getItem(KEY+'_streak')||0);
+  if(!last) return 0;
+  if(last===todayStr()||last===yesterdayStr()) return streak; // still alive
+  return 0; // broken
+}
+function bumpStreak(){ // call when the user actually reviews a card
+  const today=todayStr();
+  const last=localStorage.getItem(KEY+'_lastday');
+  let streak=+(localStorage.getItem(KEY+'_streak')||0);
+  if(last!==today){
+    streak = (last===yesterdayStr()) ? streak+1 : 1;
+    localStorage.setItem(KEY+'_streak',String(streak));
+    localStorage.setItem(KEY+'_lastday',today);
+  }
+}
+function renderStreak(){
+  const el=document.getElementById('streakChip');if(!el)return;
+  const s=getStreak();
+  el.innerHTML = s>0 ? ('<span>🔥 <b>'+s+'</b> '+pl(s,'den','dny','dní')+' v kuse</span>')
+                     : '<span>🔥 Začni dnes sérii!</span>';
+}
+function animWord(){const el=document.getElementById('cardWord');el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
 function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
   const now=Date.now();
   let next=Infinity;
-  words.forEach(w=>{const d=w.due||0; if(d>now && d<next) next=d;});
+  words.forEach(w=>{if(w.box===4)return;const d=w.due||0; if(d>now && d<next) next=d;});
   const el=document.getElementById('nextDueText');
   if(next===Infinity){el.textContent='Až přidáš nová slovíčka, objeví se tu.';return;}
   const hours=Math.ceil((next-now)/3600000);
@@ -470,8 +506,10 @@ function setLearnDir(d){
 }
 function startLearn(forceAll){
   const now=Date.now();
-  // A word is "due" if it has no due date (new/legacy data) or its time has come.
-  const pool = forceAll ? [...words] : words.filter(w=>!w.due || w.due<=now);
+  reviewedThisSession=0;
+  renderStreak();
+  // Normal review skips "naučeno" (box 4). "Procvičit vše" includes everything.
+  const pool = forceAll ? [...words] : words.filter(w=>w.box!==4 && (!w.due || w.due<=now));
   // Order: weaker categories first, then most overdue first, then random.
   queue = pool.sort((a,b)=> a.box-b.box || (a.due||0)-(b.due||0) || Math.random()-0.5);
   qi=0;
@@ -492,11 +530,13 @@ function showCard(){
   document.getElementById('learnProgress').textContent=`Kartička ${qi+1} z ${queue.length}`;
   document.getElementById('cardSide').textContent=front.label;
   document.getElementById('cardWord').textContent=front.word;
+  animWord();
   document.getElementById('cardHint').classList.remove('hidden');
   const badge=document.getElementById('cardBadge');
   badge.textContent=BOXNAME[w.box];badge.style.background=BOXVAR[w.box];
-  badge.style.color=w.box===2?'#2a1c00':'#fff';
+  badge.style.color=w.box===2?'#2a1c00':'#f0e6d8';
   document.getElementById('rateRow').classList.add('hidden');
+  document.getElementById('retireBtn').classList.add('hidden');
   document.getElementById('exampleBox').classList.add('hidden');
   document.getElementById('examples').innerHTML='';
 }
@@ -508,13 +548,16 @@ function flipCard(){
     const back=backSide(w);
     document.getElementById('cardSide').textContent=back.label;
     document.getElementById('cardWord').textContent=back.word;
+    animWord();
     document.getElementById('cardHint').classList.add('hidden');
     document.getElementById('rateRow').classList.remove('hidden');
+    document.getElementById('retireBtn').classList.remove('hidden');
     loadExamples(w.en);
   }else{
     const front=frontSide(w);
     document.getElementById('cardSide').textContent=front.label;
     document.getElementById('cardWord').textContent=front.word;
+    animWord();
     flipped=false;
   }
 }
@@ -524,14 +567,21 @@ function rate(box){
   if(real){
     real.box=box;
     real.lastReviewed=Date.now();
-    real.due=Date.now()+INTERVAL_DAYS[box]*DAY_MS;
+    // box 4 = naučeno (retired): not scheduled. Others get next due date.
+    real.due = box===4 ? (Date.now()+3650*DAY_MS) : (Date.now()+INTERVAL_DAYS[box]*DAY_MS);
   }
+  reviewedThisSession++;
+  bumpStreak();
   save();
   qi++;showCard();
 }
 function finishLearn(){
   document.getElementById('learnArea').classList.add('hidden');
   document.getElementById('learnDone').classList.remove('hidden');
+  const n=reviewedThisSession, s=getStreak();
+  let msg='Hotovo! 🎉<br>Prošel jsi '+n+' '+pl(n,'kartičku','kartičky','kartiček')+'.';
+  if(s>0) msg+='<br>🔥 Série: '+s+' '+pl(s,'den','dny','dní')+' v kuse.';
+  document.getElementById('doneMsg').innerHTML=msg;
   renderList();
 }
 
