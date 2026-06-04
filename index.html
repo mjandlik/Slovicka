@@ -364,19 +364,37 @@ function renderList(){
 function delWord(id){words=words.filter(w=>w.id!==id);save();renderList();}
 function esc(s){return s.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
 
-/* ---------- Backup: export + two-way Sync ---------- */
-function exportWords(silent){
-  if(!words.length){if(!silent)toast('Nejsou žádná slovíčka');return;}
-  const blob=new Blob([JSON.stringify(words,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
-  document.body.appendChild(a);a.click();a.remove();
-  URL.revokeObjectURL(url);
+/* ---------- Backup: export (with location chooser) + two-way Sync ---------- */
+function markBackupDone(){
   localStorage.setItem(KEY+'_backup',String(Date.now()));
   updateBackupBanner();
-  if(!silent)toast('Záloha stažena');
+}
+async function exportWords(){
+  if(!words.length){toast('Nejsou žádná slovíčka');return;}
+  const fname='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
+  const json=JSON.stringify(words,null,2);
+  // Preferred on phones: system share/save sheet → choose Google Disk, Soubory, …
+  try{
+    const file=new File([json],fname,{type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:fname});
+      markBackupDone();
+      toast('Záloha uložena');
+      return;
+    }
+  }catch(e){
+    if(e && e.name==='AbortError') return; // user closed the sheet
+    // any other error → fall back to a normal download
+  }
+  // Fallback (e.g. desktop): download into Stažené
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=fname;
+  document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(url);
+  markBackupDone();
+  toast('Záloha stažena');
 }
 // Two-way merge: union of file + app; for the same word the newer progress wins.
 function mergeWords(incoming){
@@ -416,9 +434,8 @@ function syncWords(ev){
       const arr=JSON.parse(reader.result);
       if(!Array.isArray(arr)) throw new Error('bad');
       const added=mergeWords(arr);
-      save();renderList();
-      exportWords(true); // save fresh merged backup
-      toast('Sync hotový: +'+added+' nových, celkem '+words.length);
+      save();renderList(); // marks changes pending → banner will prompt for Záloha
+      toast('Sloučeno: +'+added+' nových, celkem '+words.length+'. Dej Zálohu.');
     }catch(e){
       toast('Soubor se nepodařilo načíst');
     }
