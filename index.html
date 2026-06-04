@@ -77,7 +77,8 @@
   }
   .result .out.empty{color:var(--ink-faint);font-style:italic;font-size:15px;}
   .opt{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;}
-  .opt .opt-w{flex:1;font-size:17px;}
+  .opt .opt-w{flex:1;font-size:17px;cursor:pointer;border-bottom:1px dashed transparent;}
+  .opt .opt-w:active{border-bottom-color:var(--accent);}
   .opt-pos{font-size:11px;color:var(--ink-faint);border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:4px;white-space:nowrap;}
   .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;width:40px;height:40px;font-size:22px;font-weight:700;cursor:pointer;line-height:1;}
   .opt.saved{opacity:.55;}
@@ -160,7 +161,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v14</span>
+  <span class="tag">EN · CS · v15</span>
 </header>
 
 <div class="wrap">
@@ -177,9 +178,7 @@
       <textarea id="src" placeholder="napiš slovíčko nebo frázi…"></textarea>
       <button class="btn" id="goBtn" onclick="translateNow()">Přeložit</button>
       <div class="result">
-        <label class="fld" id="outLabel">Překlad</label>
-        <div class="out empty" id="out">Sem se zobrazí překlad…</div>
-        <div id="optsLabel" class="fld hidden" style="margin-top:14px;">Vyber, co uložit k učení:</div>
+        <div id="optsLabel" class="fld hidden">Překlady — ťukni na slovo pro další překlad, ＋ pro uložení:</div>
         <div id="opts"></div>
       </div>
     </div>
@@ -206,6 +205,7 @@
       <h2>Moje slovíčka</h2>
       <span class="tag" id="totalCount">0</span>
     </div>
+    <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:12px;">
     <div id="wordList"></div>
   </section>
 
@@ -284,7 +284,6 @@ function setDir(f,t){from=f;to=t;document.getElementById('dirA').classList.toggl
 function swapDir(){setDir(to,from);const s=document.getElementById('src');s.value=(current&&current.options&&current.options[0])?current.options[0].word:s.value;}
 function refreshLabels(){
   document.getElementById('srcLabel').textContent='Zadej text v '+LANGNAME[from];
-  document.getElementById('outLabel').textContent='Překlad do '+LANGNAME[to];
 }
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
@@ -347,9 +346,10 @@ async function translateNow(){
   let text=document.getElementById('src').value.trim();
   if(!text){toast('Napiš nejdřív text');return;}
   const btn=document.getElementById('goBtn');
-  const out=document.getElementById('out');
+  const opts=document.getElementById('opts');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Překládám…';
-  out.classList.add('empty');out.textContent='…';
+  document.getElementById('optsLabel').classList.add('hidden');
+  opts.innerHTML='<div class="ex-loading">Překládám…</div>';
   try{
     let res;
     if(from==='cs'){
@@ -371,15 +371,13 @@ async function translateNow(){
       res=await smartTranslate(text,from,to);
     }
     if(!res || !res.text) throw new Error('no result');
-    out.classList.remove('empty');
-    out.textContent=res.text;
     const options=buildOptions(res.text,res.alts);
     current={source:text,from,to,options};
     renderOptions(options);
   }catch(e){
-    out.classList.add('empty');
-    out.textContent='Překlad se nepovedl (zkontroluj připojení).';
-    current=null;renderOptions([]);
+    current=null;
+    document.getElementById('optsLabel').classList.add('hidden');
+    opts.innerHTML='<div class="ex-loading">Překlad se nepovedl (zkontroluj připojení).</div>';
   }finally{
     btn.disabled=false;btn.textContent='Přeložit';
   }
@@ -392,9 +390,16 @@ function renderOptions(options){
   if(!options||!options.length){cont.innerHTML='';lbl.classList.add('hidden');return;}
   lbl.classList.remove('hidden');
   cont.innerHTML=options.map((o,i)=>
-    '<div class="opt" id="opt'+i+'"><span class="opt-w">'+esc(o.word)+
+    '<div class="opt" id="opt'+i+'"><span class="opt-w" onclick="retranslate('+i+')">'+esc(o.word)+
     (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
     '<button class="opt-add" onclick="savePair('+i+')">＋</button></div>').join('');
+}
+function retranslate(i){
+  if(!current||!current.options)return;
+  const opt=current.options[i];if(!opt)return;
+  setDir(to,from); // flip direction (tapped word is in the target language)
+  document.getElementById('src').value=opt.word;
+  translateNow();
 }
 function savePair(i){
   if(!current||!current.options)return;
@@ -422,7 +427,11 @@ function renderList(){
   document.getElementById('totalCount').textContent=words.length;
   const list=document.getElementById('wordList');
   if(!words.length){list.innerHTML='<div class="empty-note">Žádná slovíčka.<br>Přelož něco a ulož si to.</div>';return;}
-  list.innerHTML=words.map(w=>`
+  const qEl=document.getElementById('listSearch');
+  const q=qEl?stripDia(qEl.value):'';
+  const shown=q ? words.filter(w=>stripDia(w.en).includes(q)||stripDia(w.cs).includes(q)) : words;
+  if(!shown.length){list.innerHTML='<div class="empty-note">Nic nenalezeno.</div>';return;}
+  list.innerHTML=shown.map(w=>`
     <div class="item">
       <span class="dot" style="background:${BOXVAR[w.box]}"></span>
       <div class="txt">
