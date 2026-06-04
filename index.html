@@ -81,6 +81,8 @@
   .opt .opt-w:active{border-bottom-color:var(--accent);}
   .opt-pos{font-size:11px;color:var(--ink-faint);border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:4px;white-space:nowrap;}
   .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;width:40px;height:40px;font-size:22px;font-weight:700;cursor:pointer;line-height:1;}
+  .opt .opt-say{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:40px;height:40px;font-size:17px;cursor:pointer;}
+  .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
   .opt.saved{opacity:.55;}
   .opt.saved .opt-add{background:var(--c-known);color:#fff;}
 
@@ -161,7 +163,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v17</span>
+  <span class="tag">EN · CS · v18</span>
 </header>
 
 <div class="wrap">
@@ -226,6 +228,7 @@
       <div class="progress" id="learnProgress"></div>
       <div class="flash" id="flash" onclick="flipCard()">
         <span class="badge" id="cardBadge"></span>
+        <button class="say" id="cardSay" onclick="event.stopPropagation();speakCard()">🔊</button>
         <span class="side-label" id="cardSide"></span>
         <span class="word" id="cardWord"></span>
         <span class="hint" id="cardPos" style="margin-top:8px;color:var(--ink-faint);font-size:13px;"></span>
@@ -274,6 +277,25 @@ function updateBackupBanner(){
 /* ---------- Toast ---------- */
 let toastT;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
+
+/* ---------- Speech (pronunciation) ---------- */
+let _voices=[];
+function loadVoices(){try{_voices=window.speechSynthesis.getVoices()||[];}catch(e){}}
+function speak(text,lang){
+  text=(text||'').trim();if(!text)return;
+  if(!('speechSynthesis' in window)){toast('Předčítání nepodporováno');return;}
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    lang=lang||'en-US';u.lang=lang;u.rate=0.95;
+    const pref=lang.slice(0,2).toLowerCase();
+    const v=_voices.find(x=>x.lang&&x.lang.toLowerCase().startsWith(pref));
+    if(v)u.voice=v;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function speakOption(i){if(!current||!current.options)return;const o=current.options[i];if(!o)return;speak(o.word, current.from==='cs'?'en-US':'cs-CZ');}
+function speakCard(){const w=queue[qi];if(w)speak(w.en,'en-US');}
 
 /* ---------- Direction ---------- */
 let from='cs',to='en';
@@ -384,6 +406,7 @@ function renderOptions(options){
   cont.innerHTML=options.map((o,i)=>
     '<div class="opt" id="opt'+i+'"><span class="opt-w" onclick="retranslate('+i+')">'+esc(o.word)+
     (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
+    '<button class="opt-say" onclick="speakOption('+i+')">🔊</button>'+
     '<button class="opt-add" onclick="savePair('+i+')">＋</button></div>').join('');
 }
 function retranslate(i){
@@ -698,6 +721,7 @@ function show(v){
 }
 
 /* ---------- init ---------- */
+if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged=loadVoices; }
 if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
 refreshLabels();renderList();updateBackupBanner();
 document.getElementById('src').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();translateNow();}});
