@@ -161,7 +161,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v16</span>
+  <span class="tag">EN · CS · v17</span>
 </header>
 
 <div class="wrap">
@@ -174,11 +174,9 @@
         <button class="swap" onclick="swapDir()">⇄</button>
         <button id="dirB" onclick="setDir('en','cs')">Angličtina</button>
       </div>
-      <label class="fld" id="srcLabel">Zadej text v češtině</label>
       <textarea id="src" placeholder="napiš slovíčko nebo frázi…"></textarea>
-      <button class="btn" id="goBtn" onclick="translateNow()">Přeložit</button>
+      <button class="btn" id="goBtn" onclick="translateNow()">Překlad</button>
       <div class="result">
-        <div id="optsLabel" class="fld hidden">Překlady</div>
         <div id="opts"></div>
       </div>
     </div>
@@ -282,9 +280,7 @@ let from='cs',to='en';
 const LANGNAME={cs:'češtině',en:'angličtině'};
 function setDir(f,t){from=f;to=t;document.getElementById('dirA').classList.toggle('on',f==='cs');document.getElementById('dirB').classList.toggle('on',f==='en');refreshLabels();}
 function swapDir(){setDir(to,from);const s=document.getElementById('src');s.value=(current&&current.options&&current.options[0])?current.options[0].word:s.value;}
-function refreshLabels(){
-  document.getElementById('srcLabel').textContent='Zadej text v '+LANGNAME[from];
-}
+function refreshLabels(){}
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -348,7 +344,6 @@ async function translateNow(){
   const btn=document.getElementById('goBtn');
   const opts=document.getElementById('opts');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Překládám…';
-  document.getElementById('optsLabel').classList.add('hidden');
   opts.innerHTML='<div class="ex-loading">Překládám…</div>';
   try{
     let res;
@@ -376,19 +371,16 @@ async function translateNow(){
     renderOptions(options);
   }catch(e){
     current=null;
-    document.getElementById('optsLabel').classList.add('hidden');
     opts.innerHTML='<div class="ex-loading">Překlad se nepovedl (zkontroluj připojení).</div>';
   }finally{
-    btn.disabled=false;btn.textContent='Přeložit';
+    btn.disabled=false;btn.textContent='Překlad';
   }
 }
 
 /* ---------- Save word (per chosen option) ---------- */
 function renderOptions(options){
   const cont=document.getElementById('opts');
-  const lbl=document.getElementById('optsLabel');
-  if(!options||!options.length){cont.innerHTML='';lbl.classList.add('hidden');return;}
-  lbl.classList.remove('hidden');
+  if(!options||!options.length){cont.innerHTML='';return;}
   cont.innerHTML=options.map((o,i)=>
     '<div class="opt" id="opt'+i+'"><span class="opt-w" onclick="retranslate('+i+')">'+esc(o.word)+
     (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
