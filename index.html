@@ -102,7 +102,8 @@
     display:flex;align-items:center;gap:12px;margin-bottom:9px;
   }
   .item .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
-  .item .txt{flex:1;min-width:0;}
+  .item .txt{flex:1;min-width:0;cursor:pointer;}
+  .item .say-sm{flex:0 0 auto;background:transparent;border:none;color:var(--ink-soft);font-size:18px;cursor:pointer;padding:4px 6px;}
   .item .en{font-size:16px;font-weight:600;}
   .item .cs{font-size:14px;color:var(--ink-soft);}
   .item .del{background:transparent;border:none;color:var(--ink-faint);font-size:19px;cursor:pointer;padding:4px 6px;}
@@ -165,7 +166,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v20</span>
+  <span class="tag">EN · CS · v21</span>
 </header>
 
 <div class="wrap">
@@ -207,6 +208,10 @@
       <h2>Moje slovíčka</h2>
       <span class="tag" id="totalCount">0</span>
     </div>
+    <div class="dir" id="listLangRow" style="margin-bottom:10px;">
+      <button id="llEn" class="on" onclick="setListLang('en')">Anglicky</button>
+      <button id="llCs" onclick="setListLang('cs')">Česky</button>
+    </div>
     <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:12px;">
     <div id="wordList"></div>
   </section>
@@ -231,10 +236,21 @@
       <div class="flash" id="flash" onclick="flipCard()">
         <span class="badge" id="cardBadge"></span>
         <button class="say" id="cardSay" onclick="event.stopPropagation();speakCard()">🔊</button>
+        <button class="say" id="cardEditBtn" style="left:auto;right:12px;bottom:12px;top:auto;" onclick="event.stopPropagation();openCardEdit()">✎</button>
         <span class="side-label" id="cardSide"></span>
         <span class="word" id="cardWord"></span>
         <span class="hint" id="cardPos" style="margin-top:8px;color:var(--ink-faint);font-size:13px;"></span>
         <span class="hint" id="cardHint">ťukni pro otočení</span>
+      </div>
+      <div id="cardEditPanel" class="panel hidden" style="margin-top:12px;">
+        <label class="fld">Anglicky</label>
+        <input type="text" id="editEn">
+        <label class="fld" style="margin-top:8px;">Česky</label>
+        <input type="text" id="editCs">
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn ghost" style="margin:0;flex:1;" onclick="closeCardEdit()">Zrušit</button>
+          <button class="btn" style="margin:0;flex:1;" onclick="saveCardEdit()">Uložit</button>
+        </div>
       </div>
       <div id="exampleBox" class="examples hidden">
         <h3>Fráze s tímto slovem</h3>
@@ -436,6 +452,8 @@ const BOXNAME={1:'učím se',2:'skoro',3:'umím',4:'naučeno'};
 const BOXVAR={1:'var(--c-learn)',2:'var(--c-almost)',3:'var(--c-known)',4:'var(--c-done)'};
 let boxFilter={1:true,2:true,3:true,4:true};
 function toggleBoxFilter(b){boxFilter[b]=!boxFilter[b];renderList();}
+let listLang='en'; // which language is shown as the primary line in the list
+function setListLang(l){listLang=l;document.getElementById('llEn').classList.toggle('on',l==='en');document.getElementById('llCs').classList.toggle('on',l==='cs');renderList();}
 function renderList(){
   const c={1:0,2:0,3:0,4:0};words.forEach(w=>c[w.box]=(c[w.box]||0)+1);
   document.getElementById('stLearn').textContent=c[1];
@@ -450,15 +468,48 @@ function renderList(){
   const q=qEl?stripDia(qEl.value):'';
   const shown=words.filter(w=>boxFilter[w.box] && (!q || stripDia(w.en).includes(q)||stripDia(w.cs).includes(q)));
   if(!shown.length){list.innerHTML='<div class="empty-note">Nic nenalezeno.</div>';return;}
-  list.innerHTML=shown.map(w=>`
-    <div class="item">
-      <span class="dot" style="background:${BOXVAR[w.box]}"></span>
-      <div class="txt">
-        <div class="en">${esc(w.en)}${w.pos?' <span class="opt-pos">'+esc(posLabel(w.pos))+'</span>':''}</div>
-        <div class="cs">${esc(w.cs)}</div>
-      </div>
-      <button class="del" onclick="delWord(${w.id})">✕</button>
-    </div>`).join('');
+  list.innerHTML=shown.map(w=>{
+    const posTag=w.pos?' <span class="opt-pos">'+esc(posLabel(w.pos))+'</span>':'';
+    const enLine='<div class="en">'+esc(w.en)+posTag+'</div>';
+    const csLine='<div class="cs">'+esc(w.cs)+'</div>';
+    const primary = listLang==='en'?enLine:csLine;
+    const secondary = listLang==='en'?csLine:enLine;
+    return '<div class="item">'+
+      '<span class="dot" style="background:'+BOXVAR[w.box]+'"></span>'+
+      '<div class="txt" onclick="openWordInCards('+w.id+')">'+primary+secondary+'</div>'+
+      '<button class="say-sm" onclick="speakWordById('+w.id+')">🔊</button>'+
+      '<button class="del" onclick="delWord('+w.id+')">✕</button>'+
+    '</div>';
+  }).join('');
+}
+function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.en,'en-US');}
+function openWordInCards(id){
+  const w=words.find(x=>x.id===id);if(!w)return;
+  ['translate','list','learn'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
+  reviewedThisSession=0;renderStreak();
+  document.getElementById('learnEmpty').classList.add('hidden');
+  document.getElementById('learnNothingDue').classList.add('hidden');
+  document.getElementById('learnDone').classList.add('hidden');
+  document.getElementById('cardEditPanel').classList.add('hidden');
+  document.getElementById('learnArea').classList.remove('hidden');
+  queue=[w];qi=0;showCard();
+}
+function openCardEdit(){
+  const w=queue[qi];if(!w)return;
+  document.getElementById('editEn').value=w.en;
+  document.getElementById('editCs').value=w.cs;
+  document.getElementById('cardEditPanel').classList.remove('hidden');
+}
+function closeCardEdit(){document.getElementById('cardEditPanel').classList.add('hidden');}
+function saveCardEdit(){
+  const w=queue[qi];if(!w)return;
+  const en=document.getElementById('editEn').value.trim();
+  const cs=document.getElementById('editCs').value.trim();
+  if(!en||!cs){toast('Vyplň obě pole');return;}
+  const real=words.find(x=>x.id===w.id)||w;
+  real.en=en;real.cs=cs;w.en=en;w.cs=cs;
+  save();renderList();showCard();closeCardEdit();
+  toast('Upraveno ✓');
 }
 function delWord(id){words=words.filter(w=>w.id!==id);save();renderList();}
 function esc(s){return s.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
@@ -629,6 +680,7 @@ function showCard(){
   badge.style.color=w.box===2?'#2a1c00':'#f0e6d8';
   document.getElementById('rateRow').classList.add('hidden');
   document.getElementById('retireBtn').classList.add('hidden');
+  document.getElementById('cardEditPanel').classList.add('hidden');
   document.getElementById('exampleBox').classList.add('hidden');
   document.getElementById('examples').innerHTML='';
 }
