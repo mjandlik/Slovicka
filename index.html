@@ -154,7 +154,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v8</span>
+  <span class="tag">EN · CS · v9</span>
 </header>
 
 <div class="wrap">
@@ -288,8 +288,10 @@ function stripDia(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').to
 // Shared helper: returns {text, corrected}. Google Translate only.
 // Uses sl=auto so Google also returns its spell/diacritics suggestion (d[7]),
 // `corrected` = source rewritten with proper diacritics (may be empty).
-async function translateText(text,src,tgt){
-  const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+tgt+'&dt=t&q='+encodeURIComponent(text);
+// Low-level call: returns {text, corrected}. `sl` is the source lang ('cs','en','auto').
+// With sl='auto' Google also tends to return a spell/diacritics suggestion (d[7]).
+async function translateText(text,sl,tgt){
+  const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+sl+'&tl='+tgt+'&dt=t&q='+encodeURIComponent(text);
   const r=await fetch(u);
   if(!r.ok) throw new Error('http '+r.status);
   const d=await r.json();
@@ -299,9 +301,9 @@ async function translateText(text,src,tgt){
   }
   let corrected='';
   if(Array.isArray(d[7]) && d[7][0]){
-    corrected=String(d[7][0]).replace(/<[^>]+>/g,'').trim(); // strip <b><i> markup → corrected text
+    corrected=String(d[7][0]).replace(/<[^>]+>/g,'').trim();
   }
-  return {text:out, corrected}; // note: out may be empty if only a correction was offered
+  return {text:out, corrected};
 }
 
 async function translateNow(){
@@ -312,16 +314,26 @@ async function translateNow(){
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Překládám…';
   out.classList.add('empty');out.textContent='…';
   try{
-    let res=await translateText(text,from,to);
-    // From Czech: if Google suggests the SAME word with diacritics (e.g. lizat→lízat),
-    // adopt the corrected form and translate THAT (the raw form may not translate well).
-    if(from==='cs' && res.corrected && res.corrected!==text && stripDia(res.corrected)===stripDia(text)){
-      text=res.corrected;
-      document.getElementById('src').value=text;
-      toast('Doplněna diakritika');
+    let res;
+    if(from==='cs'){
+      // 1) auto pass: may translate + may offer a diacritics correction
+      const a=await translateText(text,'auto',to);
+      if(a.corrected && a.corrected!==text && stripDia(a.corrected)===stripDia(text)){
+        // adopt corrected word and translate it reliably as Czech
+        text=a.corrected;
+        document.getElementById('src').value=text;
+        toast('Doplněna diakritika');
+        res=await translateText(text,'cs',to);
+      }else if(a.text){
+        res=a;
+      }else{
+        // auto didn't translate (e.g. missing diacritics) → force Czech engine
+        res=await translateText(text,'cs',to);
+      }
+    }else{
       res=await translateText(text,from,to);
     }
-    if(!res.text) throw new Error('no result');
+    if(!res || !res.text) throw new Error('no result');
     out.classList.remove('empty');
     out.textContent=res.text;
     current={source:text,target:res.text,from,to};
