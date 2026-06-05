@@ -201,6 +201,7 @@
   .guide ul{margin:0 0 10px;padding-left:20px;}
   .guide li{margin-bottom:5px;}
   .guide b{color:var(--ink);}
+  .guide .warn{background:rgba(211,97,74,.12);border:1px solid var(--c-learn);border-radius:12px;padding:12px 14px;margin:4px 0 18px;color:var(--ink);font-size:14px;line-height:1.5;}
   .toast{
     position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
     background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:30px;font-weight:600;font-size:14px;
@@ -213,7 +214,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v40</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v43</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -335,6 +336,7 @@
   <section id="view-guide" class="hidden">
     <div class="listhead"><h2>Návod</h2></div>
     <div class="guide">
+      <div class="warn">⚠️ <b>Důležité – zálohuj!</b> Slovíčka jsou uložená jen v tomto prohlížeči. Když vymažeš historii / data prohlížeče (nebo appku odinstaluješ), <b>data se nenávratně ztratí</b>. Pravidelně dělej <b>Zálohu</b> (v záložce Slovíčka) a soubor si ulož mimo prohlížeč (Disk, Soubory). Zpět ho načteš přes <b>Sync</b>.</div>
       <h3>Co appka umí</h3>
       <p>Slovíčka je tvůj osobní trenér slovní zásoby pro tři jazyky: <b>angličtinu, němčinu a španělštinu</b> (vždy ve dvojici s češtinou). Překládá, ukládá slovíčka, učí je metodou chytrého opakování a vede statistiku. Vše běží offline v prohlížeči, jen překlad a výslovnost potřebují internet.</p>
 
@@ -361,7 +363,7 @@
       <p>Statistika ukazuje počty a vývoj v čase pro aktuální jazyk. V Nastavení vyladíš chování učení (jak rychle se vrací neznámá slova, jak často se míchají kategorie).</p>
 
       <h3>Záloha a obnovení</h3>
-      <p>Data jsou jen v prohlížeči – pravidelně dělej <b>Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše.</p>
+      <p>Data jsou jen v prohlížeči – <b>pravidelně dělej Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše. <b>Pozor:</b> vymazání dat/historie prohlížeče data v appce smaže – přežije jen tvůj zálohovaný soubor.</p>
 
       <h3>Import slovíček přes AI (z fotky i textu)</h3>
       <p>Zálohový soubor obsahuje skryté instrukce pro AI. Můžeš tak nechat slovíčka doplnit umělou inteligencí:</p>
@@ -372,6 +374,12 @@
         <li>Upravený soubor ti AI vrátí – ten pak v appce načteš přes <b>Sync</b>.</li>
       </ul>
       <p>Z textu AI vybere všechna slova, která v souboru ještě nejsou. Existující slovíčka ani jejich pokrok nemění. Pokud nepozná jazyk, zeptá se.</p>
+
+      <h3>Soukromí a aktualizace</h3>
+      <ul>
+        <li>Slovíčka <b>nejsou nijak sdílená</b> – každý má svoje, jen ve svém prohlížeči. Nikdo cizí je nevidí.</li>
+        <li>Appka se <b>aktualizuje sama</b> – nové verze se načtou při dalším otevření.</li>
+      </ul>
     </div>
     <div style="height:90px;"></div>
   </section>
@@ -491,7 +499,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v40';
+const APP_VER='v43';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
