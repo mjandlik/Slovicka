@@ -214,7 +214,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v49</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v50</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -520,7 +520,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v49';
+const APP_VER='v50';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -789,7 +789,8 @@ function markBackupDone(){
 }
 async function exportWords(){
   if(!words.length){toast('Nejsou žádná slovíčka');return;}
-  const fname='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
+  const _t=new Date(),_p=n=>String(n).padStart(2,'0');
+  const fname='slovicka-zaloha-'+_t.getFullYear()+'-'+_p(_t.getMonth()+1)+'-'+_p(_t.getDate())+'_'+_p(_t.getHours())+'-'+_p(_t.getMinutes())+'.json';
   const payload={
     _ctena_aplikaci:'Slovíčka — zálohový soubor. Pole začínající podtržítkem jsou jen pokyny, aplikace je ignoruje.',
     _ai_instrukce:'Jsi pomocník pro doplňování slovíček. Uživatel ti dá tento soubor a k němu buď FOTKU slovníku/seznamu, nebo NAKOPÍROVANÝ TEXT. Tvým úkolem je najít slovíčka a přidat NOVÁ do pole "words". Pravidla: '
