@@ -42,6 +42,13 @@
   body.list-locked .wrap{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0;}
   body.list-locked #view-list{flex:1;min-height:0;display:flex;flex-direction:column;}
   body.list-locked #wordList{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(80px + env(safe-area-inset-bottom));}
+  /* Učení tab: keep card + controls fixed, scroll only the phrases above the buttons */
+  body.learn-locked{height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
+  body.learn-locked .wrap{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0;}
+  body.learn-locked #view-learn{flex:1;min-height:0;display:flex;flex-direction:column;}
+  body.learn-locked #learnArea{flex:1;min-height:0;display:flex;flex-direction:column;}
+  body.learn-locked #exampleBox{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--learnbar-h,140px) + 74px + env(safe-area-inset-bottom));}
+  body.learn-locked #learnSpacer{display:none;}
   header{
     padding:20px 18px 12px;max-width:560px;margin:0 auto;
     display:flex;align-items:center;justify-content:space-between;gap:10px 12px;flex-wrap:wrap;
@@ -225,7 +232,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v59</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v60</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -316,7 +323,7 @@
         <h3>Fráze s tímto slovem</h3>
         <div id="examples"></div>
       </div>
-      <div style="height:150px;"></div>
+      <div id="learnSpacer" style="height:150px;"></div>
     </div>
     <div id="learnDone" class="empty-note hidden">
       <div id="doneMsg">Hotovo.</div>
@@ -536,7 +543,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v59';
+const APP_VER='v60';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1037,7 +1044,10 @@ function updateLearnBar(){
   const learnVisible=!document.getElementById('view-learn').classList.contains('hidden');
   const areaVisible=!document.getElementById('learnArea').classList.contains('hidden');
   const editing=!document.getElementById('cardEditPanel').classList.contains('hidden');
-  document.getElementById('learnBar').classList.toggle('hidden', !(learnVisible && areaVisible && !editing));
+  const bar=document.getElementById('learnBar');
+  const showBar=learnVisible && areaVisible && !editing;
+  bar.classList.toggle('hidden', !showBar);
+  if(showBar){ requestAnimationFrame(()=>{ const h=bar.offsetHeight; if(h) document.documentElement.style.setProperty('--learnbar-h', h+'px'); }); }
 }
 function showCard(){
   if(!currentCard)return;
@@ -1275,6 +1285,7 @@ function show(v){
   if(v==='stats')renderStats();
   if(v==='settings')renderSettings();
   document.body.classList.toggle('list-locked', v==='list');
+  document.body.classList.toggle('learn-locked', v==='learn');
   updateLearnBar();
 }
 
