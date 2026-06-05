@@ -81,8 +81,9 @@
   }
   .result .out.empty{color:var(--ink-faint);font-style:italic;font-size:15px;}
   .opt{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin-bottom:8px;}
-  .opt .opt-w{flex:1;font-size:17px;cursor:pointer;border-bottom:1px dashed transparent;min-width:0;}
-  .opt .opt-w:active{border-bottom-color:var(--accent);}
+  .opt .opt-w{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:1px;font-size:17px;cursor:pointer;min-width:0;}
+  .opt .opt-w:active .opt-word{border-bottom:1px dashed var(--accent);}
+  .opt .opt-pron{font-size:12px;color:var(--ink-faint);font-weight:400;}
   .opt-pos{font-size:11px;color:var(--ink-faint);border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:4px;white-space:nowrap;}
   .opt .opt-say{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:8px;width:30px;height:32px;font-size:14px;cursor:pointer;padding:0;}
   .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;width:30px;height:32px;font-size:18px;font-weight:700;cursor:pointer;line-height:1;padding:0;}
@@ -214,7 +215,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v50</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v51</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -520,7 +521,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v50';
+const APP_VER='v51';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -534,7 +535,7 @@ function stripDia(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').to
 // Low-level call: returns {text, corrected}. `sl` is the source lang ('cs','en','auto').
 // With sl='auto' Google also tends to return a spell/diacritics suggestion (d[7]).
 async function translateText(text,sl,tgt){
-  const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+sl+'&tl='+tgt+'&dt=t&dt=bd&q='+encodeURIComponent(text);
+  const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+sl+'&tl='+tgt+'&dt=t&dt=bd&dt=rm&q='+encodeURIComponent(text);
   const r=await fetch(u);
   if(!r.ok) throw new Error('http '+r.status);
   const d=await r.json();
@@ -546,12 +547,20 @@ async function translateText(text,sl,tgt){
   if(Array.isArray(d[7]) && d[7][0]){
     corrected=String(d[7][0]).replace(/<[^>]+>/g,'').trim();
   }
-  // Pronunciation / transliteration of the translated text, if Google provides one.
+  // Pronunciation / transliteration of the TRANSLATED text (e.g. Greek καρδιά → "kardiá").
+  // Google returns it in trailing segments [null,null,<translit>,<translit>]; pick the one
+  // that differs from the source word (that's the translation's romanization, not the source's).
   let pron='';
   if(Array.isArray(d[0])){
+    const src=stripDia((text||'')).toLowerCase();
+    const cands=[];
     for(const seg of d[0]){
-      if(Array.isArray(seg) && seg[0]==null && typeof seg[2]==='string' && seg[2].trim()){ pron=seg[2].trim(); break; }
+      if(Array.isArray(seg) && seg[0]==null){
+        if(typeof seg[2]==='string' && seg[2].trim()) cands.push(seg[2].trim());
+        if(typeof seg[3]==='string' && seg[3].trim()) cands.push(seg[3].trim());
+      }
     }
+    pron = cands.find(c=>stripDia(c).toLowerCase()!==src) || '';
   }
   // Alternative translations + part of speech from the dictionary block (d[1]).
   const alts=[];
@@ -648,8 +657,11 @@ function renderOptions(options){
   options.forEach((o,i)=>{optArm[i]=new Set([activeLang]);optSaved[i]=new Set();});
   cont.innerHTML=options.map((o,i)=>
     '<div class="opt" id="opt'+i+'">'+
-      '<span class="opt-w" onclick="retranslate('+i+')">'+esc(o.word)+
-        (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
+      '<span class="opt-w" onclick="retranslate('+i+')">'+
+        '<span class="opt-word">'+esc(o.word)+
+          (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
+        ((i===0 && current && current.pron)?'<span class="opt-pron">['+esc(current.pron)+']</span>':'')+
+      '</span>'+
       '<button class="opt-say" onclick="speakOption('+i+')">🔊</button>'+
       '<span class="opt-sq" id="sq-'+i+'">'+langSquaresHTML(i)+'</span>'+
       '<button class="opt-add" onclick="savePair('+i+')">＋</button>'+
