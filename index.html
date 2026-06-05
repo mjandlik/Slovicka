@@ -220,7 +220,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v56</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v58</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -345,6 +345,11 @@
       <div class="warn">⚠️ <b>Důležité – zálohuj!</b> Slovíčka jsou uložená jen v tomto prohlížeči. Když vymažeš historii / data prohlížeče (nebo appku odinstaluješ), <b>data se nenávratně ztratí</b>. Pravidelně dělej <b>Zálohu</b> (v záložce Slovíčka) a soubor si ulož mimo prohlížeč (Disk, Soubory). Zpět ho načteš přes <b>Sync</b>.</div>
       <h3>Co appka umí</h3>
       <p>Slovíčka je tvůj osobní trenér slovní zásoby pro pět jazyků: <b>angličtinu, němčinu, španělštinu, italštinu a řečtinu</b> (vždy ve dvojici s češtinou). Překládá, ukládá slovíčka, učí je metodou chytrého opakování a vede statistiku. Vše běží offline v prohlížeči, jen překlad a výslovnost potřebují internet.</p>
+
+      <h3>Instalace na plochu</h3>
+      <p><b>Android (Chrome):</b> otevři appku v Chromu (normální karta), ťukni na menu <b>⋮</b> vpravo nahoře a zvol <b>„Přidat na plochu"</b> – na některých telefonech se to jmenuje „Instalovat aplikaci". V anglickém Chromu je to <b>„Add to Home screen"</b> (případně „Install app"). Potvrď. Appka se objeví na ploše s vlastní ikonou a spouští se <b>bez lišty prohlížeče</b>, jako běžná aplikace.</p>
+      <p><b>iPhone (Safari):</b> otevři appku v Safari, ťukni na <b>Sdílet</b> a zvol <b>„Přidat na plochu"</b>.</p>
+      <p>Instalace není povinná – appka funguje i obyčejně přes odkaz v prohlížeči. Po instalaci se jen otevírá na celou obrazovku bez lišty.</p>
 
       <h3>Přepínání jazyka</h3>
       <p>Vpravo nahoře jsou malé přepínače <b>EN / DE / ESP / IT / GR</b>. Přepnutím změníš, se kterým jazykem zrovna pracuješ – každý má vlastní slovíčka i pokrok. Funguje ze všech záložek.</p>
@@ -526,7 +531,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v56';
+const APP_VER='v58';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
