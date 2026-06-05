@@ -181,7 +181,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v27</span>
+  <span class="tag">EN · CS · v29</span>
 </header>
 
 <div class="wrap">
@@ -340,7 +340,7 @@ function speak(text,lang){
   setTimeout(()=>{try{if(synth.paused)synth.resume();}catch(e){}},150);
 }
 function speakOption(i){if(!current||!current.options)return;const o=current.options[i];if(!o)return;speak(o.word, current.from==='cs'?'en-US':'cs-CZ');}
-function speakCard(){const w=queue[qi];if(w)speak(w.en,'en-US');}
+function speakCard(){const w=currentCard;if(w)speak(w.en,'en-US');}
 
 /* ---------- Direction ---------- */
 let from='cs',to='en';
@@ -514,16 +514,16 @@ function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.en,'en-
 function openWordInCards(id){
   const w=words.find(x=>x.id===id);if(!w)return;
   ['translate','list','learn','stats'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
-  reviewedThisSession=0;
+  reviewedThisSession=0;hardStreak=0;sessionAll=false;queue=[];flipped=false;
   document.getElementById('learnEmpty').classList.add('hidden');
   document.getElementById('learnNothingDue').classList.add('hidden');
   document.getElementById('learnDone').classList.add('hidden');
   document.getElementById('cardEditPanel').classList.add('hidden');
   document.getElementById('learnArea').classList.remove('hidden');
-  queue=[w];qi=0;showCard();
+  currentCard=w;showCard();
 }
 function openCardEdit(){
-  const w=queue[qi];if(!w)return;
+  const w=currentCard;if(!w)return;
   document.getElementById('editEn').value=w.en;
   document.getElementById('editCs').value=w.cs;
   document.getElementById('cardEditPanel').classList.remove('hidden');
@@ -531,7 +531,7 @@ function openCardEdit(){
 }
 function closeCardEdit(){document.getElementById('cardEditPanel').classList.add('hidden');updateLearnBar();}
 function saveCardEdit(){
-  const w=queue[qi];if(!w)return;
+  const w=currentCard;if(!w)return;
   const en=document.getElementById('editEn').value.trim();
   const cs=document.getElementById('editCs').value.trim();
   if(!en||!cs){toast('Vyplň obě pole');return;}
@@ -552,28 +552,32 @@ async function exportWords(){
   if(!words.length){toast('Nejsou žádná slovíčka');return;}
   const fname='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
   const json=JSON.stringify(words,null,2);
-  let file=null, shareable=false;
-  try{ file=new File([json],fname,{type:'application/json'}); shareable=!!(navigator.canShare && navigator.canShare({files:[file]})); }catch(e){ shareable=false; }
-  if(shareable){
-    // Phone: always offer the location chooser. Never silently download.
-    try{
+  // 1) Try the system share sheet (lets you pick Disk / Soubory) where it works.
+  try{
+    const file=new File([json],fname,{type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file], title:fname});
       markBackupDone();
-      toast('Záloha uložena');
-    }catch(e){
-      if(!(e && e.name==='AbortError')) toast('Záloha se nepovedla, zkus to znovu');
+      toast('Záloha uložena ✓');
+      return;
     }
-    return;
+  }catch(e){
+    if(e && e.name==='AbortError') return; // user closed the sheet on purpose
+    // any other error → fall through to a normal download so a backup ALWAYS happens
   }
-  // Only when sharing isn't supported at all (e.g. desktop): download into Stažené.
-  const blob=new Blob([json],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=fname;
-  document.body.appendChild(a);a.click();a.remove();
-  URL.revokeObjectURL(url);
-  markBackupDone();
-  toast('Záloha stažena');
+  // 2) Reliable fallback: download the file (lands in Stažené / Downloads).
+  try{
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=fname;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    markBackupDone();
+    toast('Záloha stažena do Stažené ✓');
+  }catch(e2){
+    toast('Záloha se nepovedla');
+  }
 }
 // Two-way merge: union of file + app; for the same word the newer progress wins.
 function mergeWords(incoming){
@@ -623,11 +627,19 @@ function syncWords(ev){
   reader.readAsText(file);
 }
 
-/* ---------- Learning (Leitner spaced repetition) ---------- */
-// Days until a word is offered again, by category after rating.
+/* ---------- Learning (adaptive endless session over a Leitner base) ---------- */
+// Long-term schedule (days until offered again on following days), by category.
 const INTERVAL_DAYS={1:1,2:3,3:7};
 const DAY_MS=86400000;
-let queue=[],qi=0,flipped=false,learnDir='cs',reviewedThisSession=0; // 'en' = EN→CS, 'cs' = CS→EN
+// Session tuning
+const GAP_NEUMIM=3;          // re-show a "neumím" card after ~3 cards
+const GAP_SKORO=8;           // re-show a "skoro" card after ~8 cards
+const MAX_HARD_IN_ROW=2;     // never show more than this many "učím se" cards in a row
+const POOL_WEIGHT={1:4,2:3,3:2,4:1}; // weaker categories picked more often
+const QUEUE_MIN=4, QUEUE_FILL=12;
+let queue=[];                // upcoming cards (references into words)
+let currentCard=null;            // currently shown card
+let flipped=false,learnDir='cs',reviewedThisSession=0,hardStreak=0,sessionAll=false;
 function animWord(){const el=document.getElementById('cardWord');el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
 function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
@@ -647,24 +659,62 @@ function setLearnDir(d){
   learnDir=d;
   document.getElementById('ldA').classList.toggle('on',d==='en');
   document.getElementById('ldB').classList.toggle('on',d==='cs');
-  if(queue.length && qi<queue.length) showCard(); // restart current card from its front side
+  if(currentCard) showCard(); // restart currentCard card from its front side
+}
+function sessionPool(){return words.filter(w=> sessionAll ? true : w.box!==4);}
+function weightedPick(cands){
+  if(!cands.length)return null;
+  const now=Date.now();
+  let total=0;const ws=cands.map(w=>{let wt=POOL_WEIGHT[w.box]||1;if((w.due||0)<=now)wt*=2;total+=wt;return wt;});
+  let r=Math.random()*total;
+  for(let i=0;i<cands.length;i++){r-=ws[i];if(r<=0)return cands[i];}
+  return cands[cands.length-1];
+}
+function refillQueue(target){
+  target=target||QUEUE_FILL;
+  const pool=sessionPool();let guard=0;
+  while(queue.length<target && guard<300){
+    guard++;
+    const avail=pool.filter(w=> w!==currentCard && queue.indexOf(w)<0);
+    if(!avail.length)break;
+    const pick=weightedPick(avail);if(!pick)break;
+    queue.push(pick);
+  }
+}
+function insertSoon(w,gap){
+  queue=queue.filter(x=>x!==w);                 // avoid duplicates
+  let pos=gap+(Math.floor(Math.random()*3)-1);  // jitter gap-1 .. gap+1
+  if(pos<1)pos=1; if(pos>queue.length)pos=queue.length;
+  queue.splice(pos,0,w);
+}
+function nextCard(){
+  if(queue.length<QUEUE_MIN) refillQueue();
+  if(!queue.length){currentCard=null;return false;}
+  let idx=0;
+  // never more than MAX_HARD_IN_ROW "učím se" cards in a row → pull an easier one forward
+  if(hardStreak>=MAX_HARD_IN_ROW && queue[0] && queue[0].box===1){
+    const j=queue.findIndex(w=>w.box!==1);
+    if(j>=0) idx=j;
+    else{
+      const easy=sessionPool().filter(w=>w.box!==1 && w!==currentCard && queue.indexOf(w)<0);
+      const e=weightedPick(easy); if(e){queue.unshift(e);idx=0;}
+    }
+  }
+  currentCard=queue.splice(idx,1)[0];
+  hardStreak = currentCard.box===1 ? hardStreak+1 : 0;
+  return true;
 }
 function startLearn(forceAll){
-  const now=Date.now();
-  reviewedThisSession=0;
-  // Normal review skips "naučeno" (box 4). "Procvičit vše" includes everything.
-  const pool = forceAll ? [...words] : words.filter(w=>w.box!==4 && (!w.due || w.due<=now));
-  // Order: weaker categories first, then most overdue first, then random.
-  queue = pool.sort((a,b)=> a.box-b.box || (a.due||0)-(b.due||0) || Math.random()-0.5);
-  qi=0;
-  const noWords = words.length===0;
-  const nothingDue = !noWords && queue.length===0;
+  sessionAll=!!forceAll;
+  reviewedThisSession=0;hardStreak=0;queue=[];currentCard=null;flipped=false;
+  const noWords=words.length===0;
+  const poolEmpty=sessionPool().length===0;
   document.getElementById('learnEmpty').classList.toggle('hidden', !noWords);
-  document.getElementById('learnNothingDue').classList.toggle('hidden', !nothingDue);
-  document.getElementById('learnArea').classList.toggle('hidden', queue.length===0);
+  document.getElementById('learnNothingDue').classList.toggle('hidden', !(poolEmpty && !noWords));
+  document.getElementById('learnArea').classList.toggle('hidden', noWords || poolEmpty);
   document.getElementById('learnDone').classList.add('hidden');
-  if(nothingDue) updateNextDueInfo();
-  if(queue.length) showCard();
+  if(poolEmpty && !noWords) updateNextDueInfo();
+  if(!noWords && !poolEmpty){ refillQueue(); if(nextCard()) showCard(); }
   updateLearnBar();
 }
 function updateLearnBar(){
@@ -674,11 +724,11 @@ function updateLearnBar(){
   document.getElementById('learnBar').classList.toggle('hidden', !(learnVisible && areaVisible && !editing));
 }
 function showCard(){
-  if(qi>=queue.length){finishLearn();return;}
+  if(!currentCard)return;
   flipped=false;
-  const w=queue[qi];
+  const w=currentCard;
   const front=frontSide(w);
-  document.getElementById('learnProgress').textContent=`Kartička ${qi+1} z ${queue.length}`;
+  document.getElementById('learnProgress').textContent='Procvičeno: '+reviewedThisSession;
   document.getElementById('cardSide').textContent=front.label;
   document.getElementById('cardWord').textContent=front.word;
   document.getElementById('cardPos').textContent = w.pos ? posLabel(w.pos) : '';
@@ -693,8 +743,8 @@ function showCard(){
   updateLearnBar();
 }
 function flipCard(){
-  if(qi>=queue.length)return;
-  const w=queue[qi];
+  if(!currentCard)return;
+  const w=currentCard;
   if(!flipped){
     flipped=true;
     const back=backSide(w);
@@ -712,17 +762,18 @@ function flipCard(){
   }
 }
 function rate(box){
-  const w=queue[qi];
-  const real=words.find(x=>x.id===w.id);
-  if(real){
-    real.box=box;
-    real.lastReviewed=Date.now();
-    // box 4 = naučeno (retired): not scheduled. Others get next due date.
-    real.due = box===4 ? (Date.now()+3650*DAY_MS) : (Date.now()+INTERVAL_DAYS[box]*DAY_MS);
-  }
+  const w=currentCard; if(!w)return;
+  const real=words.find(x=>x.id===w.id)||w;
+  real.box=box;
+  real.lastReviewed=Date.now();
+  real.due = box===4 ? (Date.now()+3650*DAY_MS) : (Date.now()+INTERVAL_DAYS[box]*DAY_MS);
   reviewedThisSession++;
   save();
-  qi++;showCard();
+  // short-term behaviour within this endless session
+  if(box===1) insertSoon(real,GAP_NEUMIM);        // neumím → comes back soon
+  else if(box===2) insertSoon(real,GAP_SKORO);     // skoro → comes back later
+  else queue=queue.filter(x=>x!==real);            // umím / naučeno → leave the loop
+  if(nextCard()) showCard(); else finishLearn();
 }
 function finishLearn(){
   document.getElementById('learnArea').classList.add('hidden');
