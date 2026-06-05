@@ -149,6 +149,12 @@
     border-top:1px solid var(--line);display:flex;padding:8px 8px calc(8px + env(safe-area-inset-bottom));
     z-index:10;
   }
+  #learnBar{
+    position:fixed;left:0;right:0;bottom:calc(60px + env(safe-area-inset-bottom));
+    max-width:560px;margin:0 auto;padding:14px 18px 10px;z-index:9;
+    background:linear-gradient(to top, var(--bg) 62%, transparent);
+  }
+  #learnBar.hidden{display:none;}
   nav button{
     flex:1;background:transparent;border:none;color:var(--ink-faint);font-family:inherit;
     font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;
@@ -157,6 +163,14 @@
   nav button.on{color:var(--accent);}
 
   .hidden{display:none !important;}
+  .numgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+  .numcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;}
+  .numcard b{display:block;font-family:'Fraunces',serif;font-size:30px;line-height:1;color:var(--ink);}
+  .numcard span{display:block;margin-top:6px;font-size:13px;color:var(--ink-soft);}
+  .numcard small{color:var(--ink-faint);font-size:12px;}
+  .chartcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 12px 10px;margin-bottom:14px;}
+  .chartcard h3{margin:0 0 4px;font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--ink);padding:0 4px;}
+  .chartcard p.sub{margin:0 0 8px;padding:0 4px;font-size:12px;color:var(--ink-faint);}
   .toast{
     position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
     background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:30px;font-weight:600;font-size:14px;
@@ -170,7 +184,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v22</span>
+  <span class="tag">EN · CS · v25</span>
 </header>
 
 <div class="wrap">
@@ -260,12 +274,7 @@
         <h3>Fráze s tímto slovem</h3>
         <div id="examples"></div>
       </div>
-      <div class="rate hidden" id="rateRow">
-        <button class="r-learn" onclick="rate(1)">Neumím<small>učím se</small></button>
-        <button class="r-almost" onclick="rate(2)">Skoro<small>skoro</small></button>
-        <button class="r-known" onclick="rate(3)">Umím<small>hotovo</small></button>
-      </div>
-      <button class="btn ghost hidden" id="retireBtn" style="margin-top:8px;font-size:14px;padding:11px;" onclick="rate(4)">✓ Naučeno – už nenabízet</button>
+      <div style="height:150px;"></div>
     </div>
     <div id="learnDone" class="empty-note hidden">
       <div id="doneMsg">Hotovo! 🎉</div>
@@ -273,12 +282,31 @@
     </div>
   </section>
 
+  <!-- ============ STATISTICS ============ -->
+  <section id="view-stats" class="hidden">
+    <div class="listhead"><h2>Statistika</h2></div>
+    <div id="statEmpty" class="empty-note hidden">Zatím tu nic není.<br>Přidej si nějaká slovíčka.</div>
+    <div id="statNums" class="numgrid"></div>
+    <div id="statCharts"></div>
+    <div style="height:90px;"></div>
+  </section>
+
+</div>
+
+<div id="learnBar" class="hidden">
+  <div class="rate" id="rateRow">
+    <button class="r-learn" onclick="rate(1)">Neumím<small>učím se</small></button>
+    <button class="r-almost" onclick="rate(2)">Skoro<small>skoro</small></button>
+    <button class="r-known" onclick="rate(3)">Umím<small>hotovo</small></button>
+  </div>
+  <button class="btn ghost" id="retireBtn" style="margin-top:8px;font-size:14px;padding:10px;" onclick="rate(4)">✓ Naučeno – už nenabízet</button>
 </div>
 
 <nav>
   <button id="nav-translate" class="on" onclick="show('translate')"><span class="ic">⇆</span>Překladač</button>
   <button id="nav-list" onclick="show('list')"><span class="ic">☰</span>Slovíčka</button>
   <button id="nav-learn" onclick="show('learn')"><span class="ic">◧</span>Učení</button>
+  <button id="nav-stats" onclick="show('stats')"><span class="ic">▦</span>Statistika</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -489,7 +517,7 @@ function renderList(){
 function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.en,'en-US');}
 function openWordInCards(id){
   const w=words.find(x=>x.id===id);if(!w)return;
-  ['translate','list','learn'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
+  ['translate','list','learn','stats'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
   reviewedThisSession=0;renderStreak();
   document.getElementById('learnEmpty').classList.add('hidden');
   document.getElementById('learnNothingDue').classList.add('hidden');
@@ -503,8 +531,9 @@ function openCardEdit(){
   document.getElementById('editEn').value=w.en;
   document.getElementById('editCs').value=w.cs;
   document.getElementById('cardEditPanel').classList.remove('hidden');
+  updateLearnBar();
 }
-function closeCardEdit(){document.getElementById('cardEditPanel').classList.add('hidden');}
+function closeCardEdit(){document.getElementById('cardEditPanel').classList.add('hidden');updateLearnBar();}
 function saveCardEdit(){
   const w=queue[qi];if(!w)return;
   const en=document.getElementById('editEn').value.trim();
@@ -527,20 +556,20 @@ async function exportWords(){
   if(!words.length){toast('Nejsou žádná slovíčka');return;}
   const fname='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
   const json=JSON.stringify(words,null,2);
-  // Preferred on phones: system share/save sheet → choose Google Disk, Soubory, …
-  try{
-    const file=new File([json],fname,{type:'application/json'});
-    if(navigator.canShare && navigator.canShare({files:[file]})){
+  let file=null, shareable=false;
+  try{ file=new File([json],fname,{type:'application/json'}); shareable=!!(navigator.canShare && navigator.canShare({files:[file]})); }catch(e){ shareable=false; }
+  if(shareable){
+    // Phone: always offer the location chooser. Never silently download.
+    try{
       await navigator.share({files:[file], title:fname});
       markBackupDone();
       toast('Záloha uložena');
-      return;
+    }catch(e){
+      if(!(e && e.name==='AbortError')) toast('Záloha se nepovedla, zkus to znovu');
     }
-  }catch(e){
-    if(e && e.name==='AbortError') return; // user closed the sheet
-    // any other error → fall back to a normal download
+    return;
   }
-  // Fallback (e.g. desktop): download into Stažené
+  // Only when sharing isn't supported at all (e.g. desktop): download into Stažené.
   const blob=new Blob([json],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -667,6 +696,13 @@ function startLearn(forceAll){
   document.getElementById('learnDone').classList.add('hidden');
   if(nothingDue) updateNextDueInfo();
   if(queue.length) showCard();
+  updateLearnBar();
+}
+function updateLearnBar(){
+  const learnVisible=!document.getElementById('view-learn').classList.contains('hidden');
+  const areaVisible=!document.getElementById('learnArea').classList.contains('hidden');
+  const editing=!document.getElementById('cardEditPanel').classList.contains('hidden');
+  document.getElementById('learnBar').classList.toggle('hidden', !(learnVisible && areaVisible && !editing));
 }
 function showCard(){
   if(qi>=queue.length){finishLearn();return;}
@@ -682,11 +718,10 @@ function showCard(){
   const badge=document.getElementById('cardBadge');
   badge.textContent=BOXNAME[w.box];badge.style.background=BOXVAR[w.box];
   badge.style.color=w.box===2?'#2a1c00':'#f0e6d8';
-  document.getElementById('rateRow').classList.add('hidden');
-  document.getElementById('retireBtn').classList.add('hidden');
   document.getElementById('cardEditPanel').classList.add('hidden');
   document.getElementById('exampleBox').classList.add('hidden');
   document.getElementById('examples').innerHTML='';
+  updateLearnBar();
 }
 function flipCard(){
   if(qi>=queue.length)return;
@@ -698,8 +733,6 @@ function flipCard(){
     document.getElementById('cardWord').textContent=back.word;
     animWord();
     document.getElementById('cardHint').classList.add('hidden');
-    document.getElementById('rateRow').classList.remove('hidden');
-    document.getElementById('retireBtn').classList.remove('hidden');
     loadExamples(w.en);
   }else{
     const front=frontSide(w);
@@ -731,6 +764,7 @@ function finishLearn(){
   if(s>0) msg+='<br>🔥 Série: '+s+' '+pl(s,'den','dny','dní')+' v kuse.';
   document.getElementById('doneMsg').innerHTML=msg;
   renderList();
+  updateLearnBar();
 }
 
 /* ---------- Example phrases (Free Dictionary API for EN words) ---------- */
@@ -770,14 +804,81 @@ async function translateExample(sentence,id){
   }catch(e){const el=document.getElementById(id);if(el)el.textContent='';}
 }
 
+/* ---------- Statistics ---------- */
+function weekStart(ts){const d=new Date(ts);const day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d.getTime();}
+function weekLabel(ts){const d=new Date(ts);return ('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.';}
+function weekList(minTs,maxTs){const out=[];let cur=weekStart(minTs),end=weekStart(maxTs);let guard=0;while(cur<=end&&guard<520){out.push(cur);const d=new Date(cur);d.setDate(d.getDate()+7);cur=d.getTime();guard++;}return out;}
+function niceCeil(v){if(v<=5)return Math.max(1,Math.ceil(v));const p=Math.pow(10,Math.floor(Math.log10(v)));const n=v/p;let m;if(n<=1)m=1;else if(n<=2)m=2;else if(n<=5)m=5;else m=10;return m*p;}
+function svgChart(opts){
+  const W=320,H=180,padL=30,padR=10,padT=12,padB=26;
+  const plotW=W-padL-padR,plotH=H-padT-padB;
+  const n=opts.labels.length;
+  let maxV=0;opts.series.forEach(s=>s.values.forEach(v=>{if(v>maxV)maxV=v;}));
+  const niceMax=niceCeil(Math.max(maxV,1));
+  const y=v=>padT+plotH-(v/niceMax)*plotH;
+  const xLine=i=>padL+(n<=1?plotW/2:i*(plotW/(n-1)));
+  const xBar=i=>padL+(i+0.5)*(plotW/n);
+  let g='';const ticks=3;
+  for(let t=0;t<=ticks;t++){const val=niceMax*t/ticks;const yy=y(val);
+    g+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="var(--line)" stroke-width="1"/>';
+    g+='<text x="'+(padL-4)+'" y="'+(yy+3)+'" text-anchor="end" font-size="8" fill="var(--ink-faint)">'+Math.round(val)+'</text>';}
+  const step=Math.max(1,Math.ceil(n/6));let xl='';
+  for(let i=0;i<n;i++){if(i%step!==0&&i!==n-1)continue;const xx=opts.type==='bar'?xBar(i):xLine(i);
+    xl+='<text x="'+xx+'" y="'+(H-8)+'" text-anchor="middle" font-size="8" fill="var(--ink-faint)">'+opts.labels[i]+'</text>';}
+  let body='';
+  if(opts.type==='bar'){const s=opts.series[0];const bw=Math.max(2,(plotW/n)*0.6);
+    s.values.forEach((v,i)=>{const hh=(v/niceMax)*plotH;body+='<rect x="'+(xBar(i)-bw/2)+'" y="'+(padT+plotH-hh)+'" width="'+bw+'" height="'+hh+'" rx="2" fill="'+s.color+'"/>';});
+  }else{opts.series.forEach(s=>{const pts=s.values.map((v,i)=>xLine(i)+','+y(v)).join(' ');
+    if(s.fill)body+='<polygon points="'+padL+','+(padT+plotH)+' '+pts+' '+xLine(n-1)+','+(padT+plotH)+'" fill="'+s.color+'" opacity="0.13"/>';
+    body+='<polyline points="'+pts+'" fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    s.values.forEach((v,i)=>{body+='<circle cx="'+xLine(i)+'" cy="'+y(v)+'" r="2" fill="'+s.color+'"/>';});});}
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">'+g+body+xl+'</svg>';
+}
+function renderStats(){
+  const total=words.length;
+  const known=words.filter(w=>w.box>=3).length;
+  const learning=words.filter(w=>w.box<=2).length;
+  const pct=total?Math.round(known/total*100):0;
+  const empty=total===0;
+  document.getElementById('statEmpty').classList.toggle('hidden',!empty);
+  document.getElementById('statNums').classList.toggle('hidden',empty);
+  document.getElementById('statCharts').classList.toggle('hidden',empty);
+  if(empty){document.getElementById('statNums').innerHTML='';document.getElementById('statCharts').innerHTML='';return;}
+  document.getElementById('statNums').innerHTML=
+    '<div class="numcard"><b>'+total+'</b><span>slovíček celkem</span></div>'+
+    '<div class="numcard"><b style="color:var(--c-known)">'+known+'</b><span>umím <small>('+pct+' %)</small></span></div>'+
+    '<div class="numcard"><b style="color:var(--c-learn)">'+learning+'</b><span>učím se</span></div>'+
+    '<div class="numcard"><b style="color:var(--accent)">🔥 '+getStreak()+'</b><span>série (dní v kuse)</span></div>';
+  const addedTs=words.map(w=>w.added||Date.now());
+  const minTs=Math.min.apply(null,addedTs), maxTs=Date.now();
+  const weeks=weekList(minTs,maxTs);
+  const labels=weeks.map(weekLabel);
+  const idx={};weeks.forEach((w,i)=>idx[w]=i);
+  const newPer=weeks.map(()=>0);
+  words.forEach(w=>{const k=weekStart(w.added||Date.now());if(k in idx)newPer[idx[k]]++;});
+  const cumTotal=[];newPer.reduce((a,v,i)=>cumTotal[i]=a+v,0);
+  const knownPer=weeks.map(()=>0);
+  words.filter(w=>w.box>=3).forEach(w=>{const k=weekStart(w.lastReviewed||w.added||Date.now());if(k in idx)knownPer[idx[k]]++;});
+  const cumKnown=[];knownPer.reduce((a,v,i)=>cumKnown[i]=a+v,0);
+  document.getElementById('statCharts').innerHTML=
+    '<div class="chartcard"><h3>Nová slovíčka po týdnech</h3><p class="sub">kolik jsi přidal každý týden</p>'+
+      svgChart({type:'bar',labels:labels,series:[{values:newPer,color:'var(--accent)'}]})+'</div>'+
+    '<div class="chartcard"><h3>Celkem slovíček</h3><p class="sub">jak roste tvoje slovní zásoba</p>'+
+      svgChart({type:'line',labels:labels,series:[{values:cumTotal,color:'var(--accent)',fill:true}]})+'</div>'+
+    '<div class="chartcard"><h3>Umím v čase</h3><p class="sub">slovíčka ve fázi „umím" a „naučeno"</p>'+
+      svgChart({type:'line',labels:labels,series:[{values:cumKnown,color:'var(--c-known)',fill:true}]})+'</div>';
+}
+
 /* ---------- View switching ---------- */
 function show(v){
-  ['translate','list','learn'].forEach(x=>{
+  ['translate','list','learn','stats'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('on',x===v);
   });
   if(v==='list')renderList();
   if(v==='learn')startLearn();
+  if(v==='stats')renderStats();
+  updateLearnBar();
 }
 
 /* ---------- init ---------- */
