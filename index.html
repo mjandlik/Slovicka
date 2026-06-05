@@ -123,9 +123,6 @@
   .flash .word{font-family:'Fraunces',serif;font-size:34px;font-weight:600;line-height:1.15;letter-spacing:-.5px;}
   .flash .word.anim{animation:cardin .22s ease;}
   @keyframes cardin{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
-  .streak{display:flex;justify-content:center;margin-bottom:12px;}
-  .streak span{background:var(--surface);border:1px solid var(--line);border-radius:30px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--ink-soft);}
-  .streak b{color:var(--accent);}
   .flash .hint{margin-top:16px;font-size:13px;color:var(--ink-faint);}
   .flash .badge{position:absolute;top:14px;right:16px;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;}
 
@@ -184,7 +181,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v25</span>
+  <span class="tag">EN · CS · v26</span>
 </header>
 
 <div class="wrap">
@@ -245,7 +242,6 @@
       <button class="btn ghost" style="max-width:260px;margin:18px auto 0;" onclick="startLearn(true)">Procvičit vše stejně</button>
     </div>
     <div id="learnArea" class="hidden">
-      <div class="streak" id="streakChip"></div>
       <div class="dir" id="learnDirRow" style="margin-bottom:14px;">
         <button id="ldA" class="on" onclick="setLearnDir('en')">Anglicky → Česky</button>
         <button id="ldB" onclick="setLearnDir('cs')">Česky → Anglicky</button>
@@ -277,7 +273,7 @@
       <div style="height:150px;"></div>
     </div>
     <div id="learnDone" class="empty-note hidden">
-      <div id="doneMsg">Hotovo! 🎉</div>
+      <div id="doneMsg">Hotovo.</div>
       <button class="btn ghost" style="max-width:260px;margin:18px auto 0;" onclick="startLearn(true)">Procvičit vše znovu</button>
     </div>
   </section>
@@ -518,7 +514,7 @@ function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.en,'en-
 function openWordInCards(id){
   const w=words.find(x=>x.id===id);if(!w)return;
   ['translate','list','learn','stats'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
-  reviewedThisSession=0;renderStreak();
+  reviewedThisSession=0;
   document.getElementById('learnEmpty').classList.add('hidden');
   document.getElementById('learnNothingDue').classList.add('hidden');
   document.getElementById('learnDone').classList.add('hidden');
@@ -632,32 +628,6 @@ function syncWords(ev){
 const INTERVAL_DAYS={1:1,2:3,3:7};
 const DAY_MS=86400000;
 let queue=[],qi=0,flipped=false,learnDir='en',reviewedThisSession=0; // 'en' = EN→CS, 'cs' = CS→EN
-/* --- Streak (consecutive study days) --- */
-function todayStr(){return new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);}
-function yesterdayStr(){return new Date(Date.now()-DAY_MS-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);}
-function getStreak(){
-  const last=localStorage.getItem(KEY+'_lastday');
-  const streak=+(localStorage.getItem(KEY+'_streak')||0);
-  if(!last) return 0;
-  if(last===todayStr()||last===yesterdayStr()) return streak; // still alive
-  return 0; // broken
-}
-function bumpStreak(){ // call when the user actually reviews a card
-  const today=todayStr();
-  const last=localStorage.getItem(KEY+'_lastday');
-  let streak=+(localStorage.getItem(KEY+'_streak')||0);
-  if(last!==today){
-    streak = (last===yesterdayStr()) ? streak+1 : 1;
-    localStorage.setItem(KEY+'_streak',String(streak));
-    localStorage.setItem(KEY+'_lastday',today);
-  }
-}
-function renderStreak(){
-  const el=document.getElementById('streakChip');if(!el)return;
-  const s=getStreak();
-  el.innerHTML = s>0 ? ('<span>🔥 <b>'+s+'</b> '+pl(s,'den','dny','dní')+' v kuse</span>')
-                     : '<span>🔥 Začni dnes sérii!</span>';
-}
 function animWord(){const el=document.getElementById('cardWord');el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
 function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
@@ -682,7 +652,6 @@ function setLearnDir(d){
 function startLearn(forceAll){
   const now=Date.now();
   reviewedThisSession=0;
-  renderStreak();
   // Normal review skips "naučeno" (box 4). "Procvičit vše" includes everything.
   const pool = forceAll ? [...words] : words.filter(w=>w.box!==4 && (!w.due || w.due<=now));
   // Order: weaker categories first, then most overdue first, then random.
@@ -752,17 +721,14 @@ function rate(box){
     real.due = box===4 ? (Date.now()+3650*DAY_MS) : (Date.now()+INTERVAL_DAYS[box]*DAY_MS);
   }
   reviewedThisSession++;
-  bumpStreak();
   save();
   qi++;showCard();
 }
 function finishLearn(){
   document.getElementById('learnArea').classList.add('hidden');
   document.getElementById('learnDone').classList.remove('hidden');
-  const n=reviewedThisSession, s=getStreak();
-  let msg='Hotovo! 🎉<br>Prošel jsi '+n+' '+pl(n,'kartičku','kartičky','kartiček')+'.';
-  if(s>0) msg+='<br>🔥 Série: '+s+' '+pl(s,'den','dny','dní')+' v kuse.';
-  document.getElementById('doneMsg').innerHTML=msg;
+  const n=reviewedThisSession;
+  document.getElementById('doneMsg').innerHTML='Hotovo. Prošel jsi '+n+' '+pl(n,'kartičku','kartičky','kartiček')+'.';
   renderList();
   updateLearnBar();
 }
@@ -844,11 +810,13 @@ function renderStats(){
   document.getElementById('statNums').classList.toggle('hidden',empty);
   document.getElementById('statCharts').classList.toggle('hidden',empty);
   if(empty){document.getElementById('statNums').innerHTML='';document.getElementById('statCharts').innerHTML='';return;}
+  const wkNow=weekStart(Date.now());
+  const addedThisWeek=words.filter(w=>weekStart(w.added||Date.now())===wkNow).length;
   document.getElementById('statNums').innerHTML=
     '<div class="numcard"><b>'+total+'</b><span>slovíček celkem</span></div>'+
     '<div class="numcard"><b style="color:var(--c-known)">'+known+'</b><span>umím <small>('+pct+' %)</small></span></div>'+
     '<div class="numcard"><b style="color:var(--c-learn)">'+learning+'</b><span>učím se</span></div>'+
-    '<div class="numcard"><b style="color:var(--accent)">🔥 '+getStreak()+'</b><span>série (dní v kuse)</span></div>';
+    '<div class="numcard"><b style="color:var(--accent)">'+addedThisWeek+'</b><span>nově tento týden</span></div>';
   const addedTs=words.map(w=>w.added||Date.now());
   const minTs=Math.min.apply(null,addedTs), maxTs=Date.now();
   const weeks=weekList(minTs,maxTs);
