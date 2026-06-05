@@ -214,7 +214,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v44</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v46</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -342,6 +342,7 @@
 
       <h3>Přepínání jazyka</h3>
       <p>Vpravo nahoře jsou malé přepínače <b>AJ / NJ / ŠJ</b>. Přepnutím změníš, se kterým jazykem zrovna pracuješ – každý má vlastní slovíčka i pokrok. Funguje ze všech záložek.</p>
+      <p><b>Tip:</b> když máš v překladači zobrazený překlad a přepneš na jiný jazyk, appka rovnou vezme <b>české slovo</b> a přeloží ho do nového jazyka (překládáš-li zrovna do češtiny, vezme první význam). Hned tak vidíš totéž slovo v dalším jazyce.</p>
 
       <h3>Překladač</h3>
       <p>Napiš české nebo cizí slovo a dej <b>Překlad</b>. Šipkou ⇄ přepneš směr. Ukáže se víc variant překladu, u každé:</p>
@@ -379,6 +380,15 @@
       <ul>
         <li>Slovíčka <b>nejsou nijak sdílená</b> – každý má svoje, jen ve svém prohlížeči. Nikdo cizí je nevidí.</li>
         <li>Appka se <b>aktualizuje sama</b> – nové verze se načtou při dalším otevření.</li>
+      </ul>
+
+      <h3>O aplikaci</h3>
+      <ul>
+        <li>Appku vyvinul <b>Claude</b> (AI od Anthropicu) ve spolupráci s autorem.</li>
+        <li>Je to <b>jeden samostatný HTML soubor</b> – HTML, CSS a JavaScript pohromadě, bez frameworků a knihoven.</li>
+        <li>Rozsah: kolem <b>1 250 řádků</b> kódu (~72 kB).</li>
+        <li>Běží v prohlížeči i offline; překlad zajišťuje Google Translate, příkladové fráze anglický slovník dictionaryapi.dev.</li>
+        <li>Funguje jako webová appka (PWA) hostovaná na GitHub Pages.</li>
       </ul>
     </div>
     <div style="height:90px;"></div>
@@ -477,14 +487,23 @@ function renderLangbar(){
 }
 function setActiveLang(l){
   if(!LANGS[l])return;
+  // Czech word from the current translation (first meaning if we were translating into Czech)
+  let carry='';
+  if(current) carry = current.from==='cs' ? current.source : ((current.options&&current.options[0])?current.options[0].word:'');
+  const onTranslate=!document.getElementById('view-translate').classList.contains('hidden');
   activeLang=l;saveLang();
-  to=activeLang;                       // translator foreign side follows active language
-  if(from!=='cs') from=activeLang;     // keep a valid foreign→cs direction
   renderLangbar();
-  document.getElementById('src').value='';
-  document.getElementById('opts').innerHTML='';
   current=null;
-  refreshLabels();
+  if(onTranslate && carry){
+    setDir('cs',activeLang);                       // translate Czech → new language
+    document.getElementById('src').value=carry;
+    translateNow();
+  }else{
+    to=activeLang; if(from!=='cs') from=activeLang;
+    document.getElementById('src').value='';
+    document.getElementById('opts').innerHTML='';
+    refreshLabels();
+  }
   // refresh whichever view is open
   if(!document.getElementById('view-list').classList.contains('hidden'))renderList();
   if(!document.getElementById('view-stats').classList.contains('hidden'))renderStats();
@@ -499,7 +518,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v44';
+const APP_VER='v46';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
