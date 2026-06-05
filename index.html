@@ -42,11 +42,9 @@
   }
   header h1 span{color:var(--accent);font-style:italic;}
   .tag{font-size:12px;color:var(--ink-faint);letter-spacing:.5px;text-transform:uppercase;}
-  .langbar{max-width:560px;margin:0 auto 4px;padding:0 18px;display:flex;gap:8px;}
-  .langbar button{flex:1;padding:9px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;line-height:1.15;}
-  .langbar button small{display:block;font-size:10px;font-weight:500;color:var(--ink-faint);margin-top:2px;text-transform:none;letter-spacing:0;}
+  .langbar{max-width:560px;margin:0 auto 6px;padding:0 18px;display:flex;gap:6px;justify-content:flex-end;}
+  .langbar button{padding:4px 11px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:.3px;}
   .langbar button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
-  .langbar button.on small{color:var(--accent-ink);opacity:.8;}
 
   /* Cards / panels */
   .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;}
@@ -59,11 +57,6 @@
   textarea{min-height:72px;}
 
   .dir{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
-  .savelang{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
-  .savelang-lbl{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:8px;}
-  .savelang-btns{display:flex;gap:8px;}
-  .savelang-btns button{flex:1;padding:11px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;}
-  .savelang-btns button:active{background:var(--accent);color:var(--accent-ink);}
   .dir button{
     flex:1;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-soft);
     padding:9px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
@@ -86,15 +79,24 @@
     font-size:19px;min-height:52px;line-height:1.4;
   }
   .result .out.empty{color:var(--ink-faint);font-style:italic;font-size:15px;}
-  .opt{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;}
+  .opt{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  .opt .opt-top{display:flex;align-items:center;gap:10px;}
   .opt .opt-w{flex:1;font-size:17px;cursor:pointer;border-bottom:1px dashed transparent;}
   .opt .opt-w:active{border-bottom-color:var(--accent);}
   .opt-pos{font-size:11px;color:var(--ink-faint);border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:4px;white-space:nowrap;}
   .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;width:40px;height:40px;font-size:22px;font-weight:700;cursor:pointer;line-height:1;}
   .opt .opt-say{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:40px;height:40px;font-size:17px;cursor:pointer;}
+  .opt .opt-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;min-height:20px;}
+  .opt .opt-chks{display:flex;gap:14px;}
+  .opt .opt-chk{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink-soft);cursor:pointer;user-select:none;}
+  .opt .opt-chk input{width:17px;height:17px;accent-color:var(--accent);}
+  .opt .opt-saved{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+  .opt .opt-saved .sv{font-size:11px;font-weight:700;color:var(--c-known);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:2px 8px;}
   .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
-  .opt.saved{opacity:.55;}
-  .opt.saved .opt-add{background:var(--c-known);color:#fff;}
+  .cardpron{margin-top:8px;font-size:15px;color:var(--ink-soft);cursor:pointer;min-height:20px;}
+  .cardpron .pron-txt{border-bottom:1px dashed var(--line);}
+  .cardpron .pron-add{color:var(--ink-faint);font-size:13px;border:1px dashed var(--line);border-radius:20px;padding:2px 10px;}
+  .cardpron input{width:170px;text-align:center;font-size:15px;padding:6px 10px;}
 
   /* Word list */
   .listhead{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 8px;}
@@ -201,7 +203,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka</h1>
-  <span class="tag" id="verTag">CS · AJ · v33</span>
+  <span class="tag" id="verTag">CS · AJ · v34</span>
 </header>
 <div class="langbar" id="langbar"></div>
 
@@ -219,10 +221,6 @@
       <button class="btn" id="goBtn" onclick="translateNow()">Překlad</button>
       <div class="result">
         <div id="opts"></div>
-      </div>
-      <div id="saveLangRow" class="savelang hidden">
-        <span class="savelang-lbl">Uložit do slovníku:</span>
-        <div class="savelang-btns" id="saveLangBtns"></div>
       </div>
     </div>
   </section>
@@ -278,6 +276,7 @@
         <button class="say" id="cardEditBtn" style="left:auto;right:12px;bottom:12px;top:auto;" onclick="event.stopPropagation();openCardEdit()">✎</button>
         <span class="side-label" id="cardSide"></span>
         <span class="word" id="cardWord"></span>
+        <span class="cardpron" id="cardPron" onclick="event.stopPropagation();editCardPron()"></span>
         <span class="hint" id="cardPos" style="margin-top:8px;color:var(--ink-faint);font-size:13px;"></span>
         <span class="hint" id="cardHint">ťukni pro otočení</span>
       </div>
@@ -369,6 +368,7 @@ function migrateWord(w){
   if(w.lang==null) w.lang='en';
   if(w.foreign==null) w.foreign=(w.en!=null?w.en:'');
   if('en' in w) delete w.en;
+  if(w.pron==null) w.pron='';
   return w;
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();}
@@ -407,7 +407,7 @@ function setDir(f,t){from=f;to=t;document.getElementById('dirA').classList.toggl
 function swapDir(){setDir(to,from);const s=document.getElementById('src');s.value=(current&&current.options&&current.options[0])?current.options[0].word:s.value;}
 function renderLangbar(){
   document.getElementById('langbar').innerHTML=LANG_ORDER.map(l=>
-    '<button id="lang-'+l+'" class="'+(l===activeLang?'on':'')+'" onclick="setActiveLang(\''+l+'\')">'+LANGS[l].short+'<small>'+LANGS[l].name+'</small></button>'
+    '<button id="lang-'+l+'" class="'+(l===activeLang?'on':'')+'" onclick="setActiveLang(\''+l+'\')">'+LANGS[l].short+'</button>'
   ).join('');
 }
 function setActiveLang(l){
@@ -418,7 +418,6 @@ function setActiveLang(l){
   renderLangbar();
   document.getElementById('src').value='';
   document.getElementById('opts').innerHTML='';
-  document.getElementById('saveLangRow').classList.add('hidden');
   current=null;
   refreshLabels();
   // refresh whichever view is open
@@ -435,7 +434,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v33';
+const APP_VER='v34';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -461,6 +460,13 @@ async function translateText(text,sl,tgt){
   if(Array.isArray(d[7]) && d[7][0]){
     corrected=String(d[7][0]).replace(/<[^>]+>/g,'').trim();
   }
+  // Pronunciation / transliteration of the translated text, if Google provides one.
+  let pron='';
+  if(Array.isArray(d[0])){
+    for(const seg of d[0]){
+      if(Array.isArray(seg) && seg[0]==null && typeof seg[2]==='string' && seg[2].trim()){ pron=seg[2].trim(); break; }
+    }
+  }
   // Alternative translations + part of speech from the dictionary block (d[1]).
   const alts=[];
   if(Array.isArray(d[1])){
@@ -469,7 +475,7 @@ async function translateText(text,sl,tgt){
       if(group && Array.isArray(group[1])) group[1].forEach(t=>{ if(t) alts.push({word:String(t),pos}); });
     });
   }
-  return {text:out, corrected, alts};
+  return {text:out, corrected, alts, pron};
 }
 const POS_CZ={noun:'podstatné jm.',verb:'sloveso',adjective:'příd. jm.',adverb:'příslovce',pronoun:'zájmeno',preposition:'předložka',conjunction:'spojka',interjection:'citoslovce',numeral:'číslovka',article:'člen',abbreviation:'zkratka',phrase:'fráze',exclamation:'citoslovce'};
 function posLabel(p){if(!p)return'';const k=String(p).toLowerCase();return POS_CZ[k]||p;}
@@ -522,12 +528,10 @@ async function translateNow(){
     }
     if(!res || !res.text) throw new Error('no result');
     const options=buildOptions(res.text,res.alts);
-    current={source:text,from,to,options};
+    current={source:text,from,to,options,pron:(from==='cs'?(res.pron||''):'')};
     renderOptions(options);
-    renderSaveLangRow();
   }catch(e){
     current=null;
-    document.getElementById('saveLangRow').classList.add('hidden');
     opts.innerHTML='<div class="ex-loading">Překlad se nepovedl (zkontroluj připojení).</div>';
   }finally{
     btn.disabled=false;btn.textContent='Překlad';
@@ -535,14 +539,24 @@ async function translateNow(){
 }
 
 /* ---------- Save word (per chosen option) ---------- */
+let optSaved={}; // per-render: option index -> array of lang codes already stored
 function renderOptions(options){
+  optSaved={};
   const cont=document.getElementById('opts');
   if(!options||!options.length){cont.innerHTML='';return;}
-  cont.innerHTML=options.map((o,i)=>
-    '<div class="opt" id="opt'+i+'"><span class="opt-w" onclick="retranslate('+i+')">'+esc(o.word)+
-    (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
-    '<button class="opt-say" onclick="speakOption('+i+')">🔊</button>'+
-    '<button class="opt-add" onclick="savePair('+i+')">＋</button></div>').join('');
+  cont.innerHTML=options.map((o,i)=>{
+    const others=LANG_ORDER.filter(l=>l!==activeLang).map(l=>
+      '<label class="opt-chk"><input type="checkbox" id="chk-'+i+'-'+l+'"> '+LANGS[l].short+'</label>').join('');
+    return '<div class="opt" id="opt'+i+'">'+
+      '<div class="opt-top">'+
+        '<span class="opt-w" onclick="retranslate('+i+')">'+esc(o.word)+
+          (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
+        '<button class="opt-say" onclick="speakOption('+i+')">🔊</button>'+
+        '<button class="opt-add" onclick="savePair('+i+')">＋</button>'+
+      '</div>'+
+      '<div class="opt-bottom"><span class="opt-chks">'+others+'</span><span class="opt-saved" id="saved-'+i+'"></span></div>'+
+    '</div>';
+  }).join('');
 }
 function retranslate(i){
   if(!current||!current.options)return;
@@ -551,61 +565,52 @@ function retranslate(i){
   document.getElementById('src').value=opt.word;
   translateNow();
 }
-// Add a {lang, cs, foreign} entry into its deck (dedup within the same language).
-function addEntry(lang,cs,foreign,pos){
+// Add a {lang, cs, foreign, pron} entry into its deck. Dedup = same lang+cs+foreign.
+// Different meanings (other foreign for same cs) are NOT duplicates → they get saved.
+function addEntry(lang,cs,foreign,pos,pron){
   cs=(cs||'').trim();foreign=(foreign||'').trim();
   if(!cs||!foreign)return 'empty';
   if(words.some(w=>w.lang===lang && w.foreign.toLowerCase()===foreign.toLowerCase() && w.cs.toLowerCase()===cs.toLowerCase()))return 'dup';
-  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null});
+  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null});
   save();
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
   return 'ok';
 }
-function savePair(i){
+function renderSavedBadge(i){
+  const el=document.getElementById('saved-'+i);if(!el)return;
+  const langs=optSaved[i]||[];
+  el.innerHTML=langs.length?langs.map(l=>'<span class="sv">'+LANGS[l].short+' ✓</span>').join(''):'';
+}
+async function savePair(i){
   if(!current||!current.options)return;
   const opt=current.options[i];if(!opt)return;
-  let foreign,cs;
+  let cs,foreign;
   if(current.from==='cs'){cs=current.source;foreign=opt.word;}
   else{foreign=current.source;cs=opt.word;}
-  const r=addEntry(activeLang,cs,foreign,opt.pos||'');
-  if(r==='dup'){toast('Už uloženo');return;}
-  if(r==='ok'){const row=document.getElementById('opt'+i);if(row)row.classList.add('saved');toast('Uloženo ✓');}
-}
-// The Czech word of the current translation (regardless of direction).
-function currentCzech(){
-  if(!current)return '';
-  if(current.from==='cs')return current.source;
-  return (current.options&&current.options[0])?current.options[0].word:'';
-}
-// The foreign (active-language) word of the current translation.
-function currentForeign(){
-  if(!current)return '';
-  if(current.from!=='cs')return current.source;
-  return (current.options&&current.options[0])?current.options[0].word:'';
-}
-function renderSaveLangRow(){
-  const row=document.getElementById('saveLangRow');
-  document.getElementById('saveLangBtns').innerHTML=LANG_ORDER.map(l=>
-    '<button onclick="saveToLang(\''+l+'\')">'+LANGS[l].short+'</button>').join('');
-  row.classList.remove('hidden');
-}
-async function saveToLang(lang){
-  const cs=currentCzech();
-  if(!cs){toast('Není co uložit');return;}
-  if(lang===activeLang){
-    const r=addEntry(lang,cs,currentForeign(),'');
-    toast(r==='dup'?LANGS[lang].short+': už uloženo':(r==='empty'?'Není co uložit':'Uloženo do '+LANGS[lang].short+' ✓'));
-    return;
+  const pron=(current.from==='cs' && i===0)?(current.pron||''):'';
+  const done=new Set(optSaved[i]||[]);
+  // Active language is always saved on +
+  const r=addEntry(activeLang,cs,foreign,opt.pos||'',pron);
+  if(r==='ok'||r==='dup') done.add(activeLang);
+  // Ticked other languages: translate the Czech word into them, then save
+  for(const L of LANG_ORDER){
+    if(L===activeLang)continue;
+    const chk=document.getElementById('chk-'+i+'-'+L);
+    if(chk && chk.checked){
+      try{
+        const res=await smartTranslate(cs,'cs',LANGS[L].gt);
+        const fw=(res.text||'').trim();
+        if(fw){
+          const rr=addEntry(L,cs,fw,'',res.pron||'');
+          if(rr==='ok'||rr==='dup') done.add(L);
+        }
+      }catch(e){/* network */}
+    }
   }
-  // Different language → translate the Czech word into it, then save.
-  toast('Překládám do '+LANGS[lang].short+'…');
-  try{
-    const res=await smartTranslate(cs,'cs',LANGS[lang].gt);
-    const foreign=(res.text||'').trim();
-    if(!foreign){toast('Překlad se nepovedl');return;}
-    const r=addEntry(lang,cs,foreign,(res.alts&&res.alts[0]&&res.alts[0].word.toLowerCase()===foreign.toLowerCase())?res.alts[0].pos:'');
-    toast(r==='dup'?LANGS[lang].short+': už uloženo':'Uloženo do '+LANGS[lang].short+': '+foreign+' ✓');
-  }catch(e){toast('Překlad se nepovedl');}
+  optSaved[i]=[...done];
+  renderSavedBadge(i);
+  const row=document.getElementById('opt'+i);if(row)row.classList.add('saved');
+  toast('Uloženo do: '+([...done].map(l=>LANGS[l].short).join(' · ')||'—'));
 }
 
 /* ---------- Word list ---------- */
@@ -685,7 +690,21 @@ function markBackupDone(){
 async function exportWords(){
   if(!words.length){toast('Nejsou žádná slovíčka');return;}
   const fname='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
-  const payload={app:'Slovíčka', version:3, savedAt:new Date().toISOString(), words:words, settings:settings};
+  const payload={
+    _ctena_aplikaci:'Slovíčka — zálohový soubor. Pole začínající podtržítkem jsou jen pokyny, aplikace je ignoruje.',
+    _ai_instrukce:'Jsi pomocník pro doplňování slovíček. Pokud uživatel přiloží fotku slovníku nebo seznamu slovíček, přidej z ní NOVÁ slovíčka do pole "words" v tomto souboru. Pravidla: '
+      +'1) Jazyk nových slov je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština), POKUD uživatel neřekne jinak nebo fotka jednoznačně neukazuje jiný jazyk; když si nejsi jistý/á, zeptej se. '
+      +'2) Na fotce bývá jeden sloupec česky (pole "cs") a druhý cizí slovo (pole "foreign"); češtinu poznáš podle diakritiky a českých slov. Spáruj je po řádcích. '
+      +'3) Každé nové slovíčko je objekt s poli podle "_schema". box dej vždy 1, lastReviewed dej null, do "added" i "due" zkopíruj číslo z pole "now_ms" tohoto souboru, "id" dej unikátní (např. now_ms + pořadové číslo). "pron" (výslovnost) a "pos" (slovní druh) nech prázdné, pokud je neznáš. '
+      +'4) NEPŘIDÁVEJ duplicity: pokud už ve "words" existuje záznam se stejnou trojicí lang + cs + foreign, vynech ho. Ale různé významy (jiné "foreign" u stejného "cs", nebo naopak) přidat smíš. '
+      +'5) Neměň existující slovíčka ani pole "settings". Vrať CELÝ upravený soubor jako platný JSON.',
+    _schema:{lang:'en | de | es', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1 = učím se (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo'},
+    now_ms:Date.now(),
+    defaultLang:activeLang,
+    app:'Slovíčka', version:4, savedAt:new Date().toISOString(),
+    settings:settings,
+    words:words
+  };
   const json=JSON.stringify(payload,null,2);
   // 1) Try the system share sheet (lets you pick Disk / Soubory) where it works.
   try{
@@ -714,6 +733,7 @@ async function exportWords(){
     toast('Záloha se nepovedla');
   }
 }
+function toMs(v){ if(typeof v==='number'&&isFinite(v))return v; if(typeof v==='string'){const t=Date.parse(v);if(!isNaN(t))return t;} return Date.now(); }
 // Two-way merge: union of file + app; for the same word the newer progress wins.
 // Key includes language so the three dictionaries never mix.
 function mergeWords(incoming){
@@ -729,9 +749,10 @@ function mergeWords(incoming){
     const norm={
       id: it.id||(Date.now()+Math.floor(Math.random()*100000)),
       lang, foreign:String(foreign), cs:String(it.cs),
+      pron: it.pron||'',
       box:[1,2,3,4].includes(it.box)?it.box:1,
-      added:it.added||Date.now(),
-      due:it.due||Date.now(),
+      added:toMs(it.added),
+      due:toMs(it.due),
       pos:it.pos||'',
       lastReviewed:it.lastReviewed||null
     };
@@ -898,6 +919,7 @@ function showCard(){
   document.getElementById('cardWord').textContent=front.word;
   document.getElementById('cardPos').textContent = w.pos ? posLabel(w.pos) : '';
   animWord();
+  renderCardPron();
   document.getElementById('cardHint').classList.remove('hidden');
   const badge=document.getElementById('cardBadge');
   badge.textContent=BOXNAME[w.box];badge.style.background=BOXVAR[w.box];
@@ -917,6 +939,7 @@ function flipCard(){
     document.getElementById('cardWord').textContent=back.word;
     animWord();
     document.getElementById('cardHint').classList.add('hidden');
+    renderCardPron();
     if(w.lang==='en') loadExamples(w.foreign);
     else { document.getElementById('exampleBox').classList.add('hidden'); document.getElementById('examples').innerHTML=''; }
   }else{
@@ -925,7 +948,33 @@ function flipCard(){
     document.getElementById('cardWord').textContent=front.word;
     animWord();
     flipped=false;
+    renderCardPron();
   }
+}
+// Pronunciation is shown only on the foreign side; tap to add/edit.
+function showingForeign(){return currentCard && (((learnDir==='fw')&&!flipped)||((learnDir==='cs')&&flipped));}
+function renderCardPron(){
+  const el=document.getElementById('cardPron');if(!el)return;
+  if(!showingForeign()){el.classList.add('hidden');el.innerHTML='';return;}
+  el.classList.remove('hidden');
+  const p=currentCard.pron;
+  el.innerHTML = p ? ('<span class="pron-txt">['+esc(p)+']</span>') : ('<span class="pron-add">+ výslovnost</span>');
+}
+function editCardPron(){
+  if(!currentCard || !showingForeign())return;
+  const host=document.getElementById('cardPron');
+  host.innerHTML='<input id="pronInput" type="text" placeholder="výslovnost">';
+  const inp=document.getElementById('pronInput');
+  inp.value=currentCard.pron||'';
+  inp.focus();
+  let saved=false;
+  const finish=()=>{ if(saved)return; saved=true;
+    const v=inp.value.trim();
+    const real=words.find(x=>x.id===currentCard.id)||currentCard;
+    real.pron=v;currentCard.pron=v;save();renderCardPron();
+  };
+  inp.addEventListener('blur',finish);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
 }
 function rate(box){
   const w=currentCard; if(!w)return;
