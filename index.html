@@ -86,8 +86,8 @@
   .opt-pos{font-size:11px;color:var(--ink-faint);border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:4px;white-space:nowrap;}
   .opt .opt-say{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:8px;width:30px;height:32px;font-size:14px;cursor:pointer;padding:0;}
   .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;width:30px;height:32px;font-size:18px;font-weight:700;cursor:pointer;line-height:1;padding:0;}
-  .opt .opt-sq{display:flex;gap:2px;flex:0 0 auto;}
-  .langsq{display:flex;align-items:center;justify-content:center;width:21px;height:32px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);font-size:9px;font-weight:700;cursor:pointer;user-select:none;line-height:1;letter-spacing:.2px;}
+  .opt .opt-sq{display:grid;grid-template-columns:repeat(3,21px);gap:3px;flex:0 0 auto;}
+  .langsq{display:flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);font-size:9px;font-weight:700;cursor:pointer;user-select:none;line-height:1;letter-spacing:.2px;}
   .langsq.armed{background:#3a352f;color:var(--ink);border-color:#4a443c;}
   .langsq.saved{background:var(--c-known);color:#15200a;border-color:var(--c-known);cursor:default;}
   .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
@@ -214,7 +214,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v48</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v49</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -520,7 +520,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v48';
+const APP_VER='v49';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
