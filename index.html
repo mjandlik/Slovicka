@@ -80,14 +80,14 @@
     font-size:19px;min-height:52px;line-height:1.4;
   }
   .result .out.empty{color:var(--ink-faint);font-style:italic;font-size:15px;}
-  .opt{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  .opt{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin-bottom:8px;}
   .opt .opt-w{flex:1;font-size:17px;cursor:pointer;border-bottom:1px dashed transparent;min-width:0;}
   .opt .opt-w:active{border-bottom-color:var(--accent);}
   .opt-pos{font-size:11px;color:var(--ink-faint);border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:4px;white-space:nowrap;}
-  .opt .opt-say{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:38px;height:38px;font-size:16px;cursor:pointer;}
-  .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;width:38px;height:38px;font-size:22px;font-weight:700;cursor:pointer;line-height:1;}
-  .opt .opt-sq{display:flex;gap:4px;flex:0 0 auto;}
-  .langsq{display:flex;align-items:center;justify-content:center;width:30px;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);font-size:11px;font-weight:700;cursor:pointer;user-select:none;line-height:1;}
+  .opt .opt-say{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:8px;width:30px;height:32px;font-size:14px;cursor:pointer;padding:0;}
+  .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;width:30px;height:32px;font-size:18px;font-weight:700;cursor:pointer;line-height:1;padding:0;}
+  .opt .opt-sq{display:flex;gap:3px;flex:0 0 auto;}
+  .langsq{display:flex;align-items:center;justify-content:center;width:23px;height:32px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);font-size:10px;font-weight:700;cursor:pointer;user-select:none;line-height:1;}
   .langsq.armed{background:#3a352f;color:var(--ink);border-color:#4a443c;}
   .langsq.saved{background:var(--c-known);color:#15200a;border-color:var(--c-known);cursor:default;}
   .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
@@ -214,7 +214,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v43</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v44</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -353,8 +353,8 @@
       <p><b>Super funkce:</b> klepnutím přímo na <b>přeložené slovo</b> se toto slovo vloží jako nový vstup a hned se přeloží zpátky. Můžeš tak rychle „proklikávat" mezi jazyky a hledat přesný význam.</p>
 
       <h3>Slovíčka (seznam)</h3>
-      <p>Přehled uložených slov. Nahoře přepínáš, zda se zobrazuje napřed cizí slovo nebo české. Barevné rámečky filtrují podle fáze učení. U slova: 🔊 výslovnost, ✓ umím (už nenabízet) / ↩ vrátit k učení, ✕ smazat. Klepnutím na slovo skočíš rovnou na jeho kartičku a můžeš ho upravit (✎).</p>
-      <p><b>Známá slova:</b> u slova v seznamu je <b>✓</b> (Umím – už nenabízet). Tím ho odložíš: zůstane v seznamu i v souboru (takže ho AI nepřidá znovu), ale přestane se nabízet v učení. Stav poznáš podle barevné tečky; tlačítkem <b>↩</b> ho kdykoli vrátíš zpět k učení.</p>
+      <p>Přehled uložených slov. Nahoře přepínáš, zda se zobrazuje napřed cizí slovo nebo české. Barevné rámečky filtrují podle fáze učení. U slova: 🔊 výslovnost, ⊘ naučeno / vrátit k učení, ✕ smazat. Klepnutím na slovo skočíš rovnou na jeho kartičku a můžeš ho upravit (✎).</p>
+      <p><b>Známá slova:</b> u slova v seznamu je značka <b>⊘</b>. Když je <b>šedá</b>, slovíčko se normálně procvičuje; ťuknutím ho přepneš na <b>Naučeno už nenabízet</b> a značka <b>zčervená</b>. Slovo zůstane v seznamu i v souboru (AI ho nepřidá znovu), ale přestane se nabízet v učení. Dalším ťuknutím (na červenou ⊘) ho vrátíš zpět k učení.</p>
 
       <h3>Učení</h3>
       <p>Nekonečné procvičování kartiček. Ťuknutím kartičku otočíš, pak ohodnotíš <b>Neumím / Trochu umím / Umím</b>, nebo <b>Naučeno už nenabízet</b> (přestane se nabízet). Co neumíš, vrátí se brzy; známé se přimíchávají méně. Směr (česky → cizí / opačně) přepneš nahoře. Na cizí straně je pole <b>výslovnosti</b> – ťukni na „+ výslovnost" nebo na stávající a přepiš; uloží se, jakmile klikneš jinam nebo dáš Enter.</p>
@@ -499,7 +499,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v43';
+const APP_VER='v44';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
