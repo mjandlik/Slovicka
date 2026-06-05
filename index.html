@@ -79,19 +79,16 @@
     font-size:19px;min-height:52px;line-height:1.4;
   }
   .result .out.empty{color:var(--ink-faint);font-style:italic;font-size:15px;}
-  .opt{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;}
-  .opt .opt-top{display:flex;align-items:center;gap:10px;}
-  .opt .opt-w{flex:1;font-size:17px;cursor:pointer;border-bottom:1px dashed transparent;}
+  .opt{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  .opt .opt-w{flex:1;font-size:17px;cursor:pointer;border-bottom:1px dashed transparent;min-width:0;}
   .opt .opt-w:active{border-bottom-color:var(--accent);}
   .opt-pos{font-size:11px;color:var(--ink-faint);border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:4px;white-space:nowrap;}
-  .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;width:40px;height:40px;font-size:22px;font-weight:700;cursor:pointer;line-height:1;}
-  .opt .opt-say{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:40px;height:40px;font-size:17px;cursor:pointer;}
-  .opt .opt-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;min-height:20px;}
-  .opt .opt-chks{display:flex;gap:14px;}
-  .opt .opt-chk{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink-soft);cursor:pointer;user-select:none;}
-  .opt .opt-chk input{width:17px;height:17px;accent-color:var(--accent);}
-  .opt .opt-saved{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-  .opt .opt-saved .sv{font-size:11px;font-weight:700;color:var(--c-known);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:2px 8px;}
+  .opt .opt-say{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:38px;height:38px;font-size:16px;cursor:pointer;}
+  .opt .opt-add{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;width:38px;height:38px;font-size:22px;font-weight:700;cursor:pointer;line-height:1;}
+  .opt .opt-sq{display:flex;gap:4px;flex:0 0 auto;}
+  .langsq{display:flex;align-items:center;justify-content:center;width:30px;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);font-size:11px;font-weight:700;cursor:pointer;user-select:none;line-height:1;}
+  .langsq.armed{background:#3a352f;color:var(--ink);border-color:#4a443c;}
+  .langsq.saved{background:var(--c-known);color:#15200a;border-color:var(--c-known);cursor:default;}
   .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
   .cardpron{margin-top:8px;font-size:15px;color:var(--ink-soft);cursor:pointer;min-height:20px;}
   .cardpron .pron-txt{border-bottom:1px dashed var(--line);}
@@ -121,6 +118,7 @@
   .item .txt{flex:1;min-width:0;cursor:pointer;}
   .item .say-sm{flex:0 0 auto;background:transparent;border:none;color:var(--ink-soft);font-size:18px;cursor:pointer;padding:4px 6px;}
   .item .en{font-size:16px;font-weight:600;}
+  .item .pron-mini{font-size:12px;font-weight:400;color:var(--ink-faint);}
   .item .cs{font-size:14px;color:var(--ink-soft);}
   .item .del{background:transparent;border:none;color:var(--ink-faint);font-size:19px;cursor:pointer;padding:4px 6px;}
   .empty-note{text-align:center;color:var(--ink-faint);padding:40px 10px;font-size:15px;line-height:1.5;}
@@ -165,11 +163,14 @@
   }
   #learnBar.hidden{display:none;}
   nav button{
-    flex:1;background:transparent;border:none;color:var(--ink-faint);font-family:inherit;
+    flex:1.25;background:transparent;border:none;color:var(--ink-faint);font-family:inherit;
     font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;
   }
   nav button .ic{font-size:21px;line-height:1;}
   nav button.on{color:var(--accent);}
+  nav button.mini{flex:0.85;font-size:9.5px;font-weight:500;gap:3px;color:#5a5048;}
+  nav button.mini .ic{font-size:16px;}
+  nav button.mini.on{color:var(--accent);}
 
   .hidden{display:none !important;}
   .numgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
@@ -190,6 +191,13 @@
   .stepper .val{min-width:34px;text-align:center;font-family:'Fraunces',serif;font-size:20px;color:var(--ink);}
   .weightinfo{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:2px 0 16px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
   .weightinfo b{color:var(--accent);font-family:'Fraunces',serif;}
+  .guide{color:var(--ink-soft);font-size:15px;line-height:1.6;}
+  .guide h3{font-family:'Fraunces',serif;font-weight:600;font-size:18px;color:var(--ink);margin:22px 0 6px;}
+  .guide h3:first-child{margin-top:4px;}
+  .guide p{margin:0 0 10px;}
+  .guide ul{margin:0 0 10px;padding-left:20px;}
+  .guide li{margin-bottom:5px;}
+  .guide b{color:var(--ink);}
   .toast{
     position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
     background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:30px;font-weight:600;font-size:14px;
@@ -203,7 +211,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka</h1>
-  <span class="tag" id="verTag">CS · AJ · v34</span>
+  <span class="tag" id="verTag">CS · AJ · v35</span>
 </header>
 <div class="langbar" id="langbar"></div>
 
@@ -251,6 +259,7 @@
       <button id="llCs" onclick="setListLang('cs')">Česky</button>
     </div>
     <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:10px;">
+    <button id="hiddenToggle" class="btn ghost" style="margin:0 0 10px;font-size:13px;padding:7px;display:none;" onclick="toggleShowHidden()"></button>
     <div id="wordList"></div>
   </section>
 
@@ -321,6 +330,51 @@
     <div style="height:90px;"></div>
   </section>
 
+  <!-- ============ GUIDE ============ -->
+  <section id="view-guide" class="hidden">
+    <div class="listhead"><h2>Návod</h2></div>
+    <div class="guide">
+      <h3>Co appka umí</h3>
+      <p>Slovíčka je tvůj osobní trenér slovní zásoby pro tři jazyky: <b>angličtinu, němčinu a španělštinu</b> (vždy ve dvojici s češtinou). Překládá, ukládá slovíčka, učí je metodou chytrého opakování a vede statistiku. Vše běží offline v prohlížeči, jen překlad a výslovnost potřebují internet.</p>
+
+      <h3>Přepínání jazyka</h3>
+      <p>Vpravo nahoře jsou malé přepínače <b>AJ / NJ / ŠJ</b>. Přepnutím změníš, se kterým jazykem zrovna pracuješ – každý má vlastní slovíčka i pokrok. Funguje ze všech záložek.</p>
+
+      <h3>Překladač</h3>
+      <p>Napiš české nebo cizí slovo a dej <b>Překlad</b>. Šipkou ⇄ přepneš směr. Ukáže se víc variant překladu, u každé:</p>
+      <ul>
+        <li>🔊 přečte slovo nahlas,</li>
+        <li>čtverečky <b>AJ/NJ/ŠJ</b> vedle ＋ určují, do kterých slovníků se má uložit (aktivní jazyk je vždy zapnutý). Po uložení čtvereček <b>zezelená</b>,</li>
+        <li>＋ slovíčko uloží. Můžeš ho stisknout i opakovaně – co už uloženo je, se přeskočí.</li>
+      </ul>
+      <p><b>Super funkce:</b> klepnutím přímo na <b>přeložené slovo</b> se toto slovo vloží jako nový vstup a hned se přeloží zpátky. Můžeš tak rychle „proklikávat" mezi jazyky a hledat přesný význam.</p>
+
+      <h3>Slovíčka (seznam)</h3>
+      <p>Přehled uložených slov. Nahoře přepínáš, zda se zobrazuje napřed cizí slovo nebo české. Barevné rámečky filtrují podle fáze učení. U slova: 🔊 výslovnost, 🚫 skrýt, ✕ smazat. Klepnutím na slovo skočíš rovnou na jeho kartičku a můžeš ho upravit (✎).</p>
+      <p><b>Skrytá slovíčka:</b> notoricky známá slova můžeš <b>skrýt</b> (🚫). Zůstanou v souboru (takže je AI nepřidá znovu), ale neukazují se v učení ani v seznamu. Přes „🚫 Skrytá slovíčka" si je zobrazíš a můžeš obnovit (↩).</p>
+
+      <h3>Učení</h3>
+      <p>Nekonečné procvičování kartiček. Ťuknutím kartičku otočíš, pak ohodnotíš <b>Neumím / Skoro / Umím</b>, nebo <b>Naučeno</b> (přestane se nabízet). Co neumíš, vrátí se brzy; známé se přimíchávají méně. Směr (česky → cizí / opačně) přepneš nahoře. Na cizí straně je pole <b>výslovnosti</b> – ťukni na „+ výslovnost" nebo na stávající a přepiš; uloží se, jakmile klikneš jinam nebo dáš Enter.</p>
+
+      <h3>Statistika a Nastavení</h3>
+      <p>Statistika ukazuje počty a vývoj v čase pro aktuální jazyk. V Nastavení vyladíš chování učení (jak rychle se vrací neznámá slova, jak často se míchají kategorie).</p>
+
+      <h3>Záloha a obnovení</h3>
+      <p>Data jsou jen v prohlížeči – pravidelně dělej <b>Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše.</p>
+
+      <h3>Import slovíček přes AI (z fotky i textu)</h3>
+      <p>Zálohový soubor obsahuje skryté instrukce pro AI. Můžeš tak nechat slovíčka doplnit umělou inteligencí:</p>
+      <ul>
+        <li>Přepni se v appce na jazyk, který se učíš, a dej <b>Záloha</b>.</li>
+        <li>V chatu s AI (např. ChatGPT, Claude, Gemini) <b>nahraj tento soubor</b> a k němu buď <b>fotku</b> slovníku/seznamu, nebo <b>nakopíruj text</b>.</li>
+        <li>Napiš třeba: „Přidej do souboru slovíčka z téhle fotky" nebo „...z tohoto textu". AI podle instrukcí v souboru najde slovíčka, přeskočí ta, co už v souboru jsou, a přidá nová jako „učím se".</li>
+        <li>Upravený soubor ti AI vrátí – ten pak v appce načteš přes <b>Sync</b>.</li>
+      </ul>
+      <p>Z textu AI vybere všechna slova, která v souboru ještě nejsou. Existující slovíčka ani jejich pokrok nemění. Pokud nepozná jazyk, zeptá se.</p>
+    </div>
+    <div style="height:90px;"></div>
+  </section>
+
 </div>
 
 <div id="learnBar" class="hidden">
@@ -336,8 +390,9 @@
   <button id="nav-translate" class="on" onclick="show('translate')"><span class="ic">⇆</span>Překladač</button>
   <button id="nav-list" onclick="show('list')"><span class="ic">☰</span>Slovíčka</button>
   <button id="nav-learn" onclick="show('learn')"><span class="ic">◧</span>Učení</button>
-  <button id="nav-stats" onclick="show('stats')"><span class="ic">▦</span>Statistika</button>
-  <button id="nav-settings" onclick="show('settings')"><span class="ic">⚙</span>Nastavení</button>
+  <button id="nav-stats" class="mini" onclick="show('stats')"><span class="ic">▦</span>Statistika</button>
+  <button id="nav-settings" class="mini" onclick="show('settings')"><span class="ic">⚙</span>Nastavení</button>
+  <button id="nav-guide" class="mini" onclick="show('guide')"><span class="ic">?</span>Návod</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -355,7 +410,7 @@ const LANG_ORDER=['en','de','es'];
 let activeLang='en';
 function loadLang(){const l=localStorage.getItem(KEY+'_lang');if(l&&LANGS[l])activeLang=l;}
 function saveLang(){try{localStorage.setItem(KEY+'_lang',activeLang);}catch(e){}}
-function deck(){return words.filter(w=>w.lang===activeLang);}
+function deck(){return words.filter(w=>w.lang===activeLang && !w.hidden);}
 let words=load();
 function load(){
   let arr=[];try{arr=JSON.parse(localStorage.getItem(KEY))||[];}catch(e){arr=[];}
@@ -369,6 +424,7 @@ function migrateWord(w){
   if(w.foreign==null) w.foreign=(w.en!=null?w.en:'');
   if('en' in w) delete w.en;
   if(w.pron==null) w.pron='';
+  if(w.hidden==null) w.hidden=false;
   return w;
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();}
@@ -434,7 +490,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v34';
+const APP_VER='v35';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -539,24 +595,36 @@ async function translateNow(){
 }
 
 /* ---------- Save word (per chosen option) ---------- */
-let optSaved={}; // per-render: option index -> array of lang codes already stored
+let optArm={}, optSaved={}; // per render: option index -> Set of langs armed / saved
+function langSquaresHTML(i){
+  return LANG_ORDER.map(l=>{
+    const saved=optSaved[i]&&optSaved[i].has(l);
+    const armed=optArm[i]&&optArm[i].has(l);
+    const cls='langsq'+(saved?' saved':(armed?' armed':''));
+    return '<span class="'+cls+'" onclick="toggleLang('+i+',\''+l+'\')">'+LANGS[l].short+'</span>';
+  }).join('');
+}
+function renderLangSquares(i){const host=document.getElementById('sq-'+i);if(host)host.innerHTML=langSquaresHTML(i);}
+function toggleLang(i,l){
+  if(optSaved[i]&&optSaved[i].has(l))return; // already saved
+  if(l===activeLang)return;                  // active language is always on
+  if(!optArm[i])optArm[i]=new Set([activeLang]);
+  if(optArm[i].has(l))optArm[i].delete(l); else optArm[i].add(l);
+  renderLangSquares(i);
+}
 function renderOptions(options){
-  optSaved={};
+  optArm={};optSaved={};
   const cont=document.getElementById('opts');
   if(!options||!options.length){cont.innerHTML='';return;}
-  cont.innerHTML=options.map((o,i)=>{
-    const others=LANG_ORDER.filter(l=>l!==activeLang).map(l=>
-      '<label class="opt-chk"><input type="checkbox" id="chk-'+i+'-'+l+'"> '+LANGS[l].short+'</label>').join('');
-    return '<div class="opt" id="opt'+i+'">'+
-      '<div class="opt-top">'+
-        '<span class="opt-w" onclick="retranslate('+i+')">'+esc(o.word)+
-          (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
-        '<button class="opt-say" onclick="speakOption('+i+')">🔊</button>'+
-        '<button class="opt-add" onclick="savePair('+i+')">＋</button>'+
-      '</div>'+
-      '<div class="opt-bottom"><span class="opt-chks">'+others+'</span><span class="opt-saved" id="saved-'+i+'"></span></div>'+
-    '</div>';
-  }).join('');
+  options.forEach((o,i)=>{optArm[i]=new Set([activeLang]);optSaved[i]=new Set();});
+  cont.innerHTML=options.map((o,i)=>
+    '<div class="opt" id="opt'+i+'">'+
+      '<span class="opt-w" onclick="retranslate('+i+')">'+esc(o.word)+
+        (o.pos?' <span class="opt-pos">'+esc(posLabel(o.pos))+'</span>':'')+'</span>'+
+      '<button class="opt-say" onclick="speakOption('+i+')">🔊</button>'+
+      '<span class="opt-sq" id="sq-'+i+'">'+langSquaresHTML(i)+'</span>'+
+      '<button class="opt-add" onclick="savePair('+i+')">＋</button>'+
+    '</div>').join('');
 }
 function retranslate(i){
   if(!current||!current.options)return;
@@ -571,15 +639,10 @@ function addEntry(lang,cs,foreign,pos,pron){
   cs=(cs||'').trim();foreign=(foreign||'').trim();
   if(!cs||!foreign)return 'empty';
   if(words.some(w=>w.lang===lang && w.foreign.toLowerCase()===foreign.toLowerCase() && w.cs.toLowerCase()===cs.toLowerCase()))return 'dup';
-  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null});
+  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null,hidden:false});
   save();
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
   return 'ok';
-}
-function renderSavedBadge(i){
-  const el=document.getElementById('saved-'+i);if(!el)return;
-  const langs=optSaved[i]||[];
-  el.innerHTML=langs.length?langs.map(l=>'<span class="sv">'+LANGS[l].short+' ✓</span>').join(''):'';
 }
 async function savePair(i){
   if(!current||!current.options)return;
@@ -588,29 +651,22 @@ async function savePair(i){
   if(current.from==='cs'){cs=current.source;foreign=opt.word;}
   else{foreign=current.source;cs=opt.word;}
   const pron=(current.from==='cs' && i===0)?(current.pron||''):'';
-  const done=new Set(optSaved[i]||[]);
-  // Active language is always saved on +
-  const r=addEntry(activeLang,cs,foreign,opt.pos||'',pron);
-  if(r==='ok'||r==='dup') done.add(activeLang);
-  // Ticked other languages: translate the Czech word into them, then save
-  for(const L of LANG_ORDER){
-    if(L===activeLang)continue;
-    const chk=document.getElementById('chk-'+i+'-'+L);
-    if(chk && chk.checked){
+  const targets=[...(optArm[i]||new Set([activeLang]))];
+  for(const L of targets){
+    if(optSaved[i].has(L))continue;
+    if(L===activeLang){
+      const r=addEntry(activeLang,cs,foreign,opt.pos||'',pron);
+      if(r==='ok'||r==='dup') optSaved[i].add(L);
+    }else{
       try{
         const res=await smartTranslate(cs,'cs',LANGS[L].gt);
         const fw=(res.text||'').trim();
-        if(fw){
-          const rr=addEntry(L,cs,fw,'',res.pron||'');
-          if(rr==='ok'||rr==='dup') done.add(L);
-        }
+        if(fw){ const rr=addEntry(L,cs,fw,'',res.pron||''); if(rr==='ok'||rr==='dup') optSaved[i].add(L); }
       }catch(e){/* network */}
     }
   }
-  optSaved[i]=[...done];
-  renderSavedBadge(i);
-  const row=document.getElementById('opt'+i);if(row)row.classList.add('saved');
-  toast('Uloženo do: '+([...done].map(l=>LANGS[l].short).join(' · ')||'—'));
+  renderLangSquares(i);
+  toast('Uloženo: '+([...optSaved[i]].map(l=>LANGS[l].short).join(' · ')||'—'));
 }
 
 /* ---------- Word list ---------- */
@@ -620,8 +676,12 @@ let boxFilter={1:true,2:true,3:true,4:true};
 function toggleBoxFilter(b){boxFilter[b]=!boxFilter[b];renderList();}
 let listLang='fw'; // 'fw' = foreign word primary, 'cs' = czech primary
 function setListLang(l){listLang=l;document.getElementById('llEn').classList.toggle('on',l==='fw');document.getElementById('llCs').classList.toggle('on',l==='cs');renderList();}
+let showHidden=false;
+function toggleShowHidden(){showHidden=!showHidden;renderList();}
 function renderList(){
-  const d=deck();
+  const all=words.filter(w=>w.lang===activeLang);
+  const d=all.filter(w=>!w.hidden);
+  const hiddenCount=all.length-d.length;
   const c={1:0,2:0,3:0,4:0};d.forEach(w=>c[w.box]=(c[w.box]||0)+1);
   document.getElementById('stLearn').textContent=c[1];
   document.getElementById('stAlmost').textContent=c[2];
@@ -629,30 +689,45 @@ function renderList(){
   document.getElementById('stDone').textContent=c[4];
   document.getElementById('totalCount').textContent=d.length;
   [1,2,3,4].forEach(b=>{const el=document.getElementById('stat'+b);if(el)el.classList.toggle('on',!!boxFilter[b]);});
+  // hidden toggle button
+  const ht=document.getElementById('hiddenToggle');
+  if(hiddenCount>0||showHidden){ ht.style.display='block'; ht.textContent=showHidden?'← zpět na slovíčka':('🚫 Skrytá slovíčka ('+hiddenCount+')'); }
+  else ht.style.display='none';
   const list=document.getElementById('wordList');
-  if(!d.length){list.innerHTML='<div class="empty-note">Žádná slovíčka v jazyce '+LANGS[activeLang].name+'.<br>Přelož něco a ulož si to.</div>';return;}
+  const base = showHidden ? all.filter(w=>w.hidden) : d;
+  if(!base.length){
+    list.innerHTML='<div class="empty-note">'+(showHidden?'Žádná skrytá slovíčka.':('Žádná slovíčka v jazyce '+LANGS[activeLang].name+'.<br>Přelož něco a ulož si to.'))+'</div>';
+    return;
+  }
   const qEl=document.getElementById('listSearch');
   const q=qEl?stripDia(qEl.value):'';
-  const shown=d.filter(w=>boxFilter[w.box] && (!q || stripDia(w.foreign).includes(q)||stripDia(w.cs).includes(q)));
+  const shown=base.filter(w=>(showHidden||boxFilter[w.box]) && (!q || stripDia(w.foreign).includes(q)||stripDia(w.cs).includes(q)));
   if(!shown.length){list.innerHTML='<div class="empty-note">Nic nenalezeno.</div>';return;}
   list.innerHTML=shown.map(w=>{
     const posTag=w.pos?' <span class="opt-pos">'+esc(posLabel(w.pos))+'</span>':'';
-    const fwLine='<div class="en">'+esc(w.foreign)+posTag+'</div>';
+    const pronTag=w.pron?' <span class="pron-mini">['+esc(w.pron)+']</span>':'';
+    const fwLine='<div class="en">'+esc(w.foreign)+posTag+pronTag+'</div>';
     const csLine='<div class="cs">'+esc(w.cs)+'</div>';
     const primary = listLang==='fw'?fwLine:csLine;
     const secondary = listLang==='fw'?csLine:fwLine;
+    const action = showHidden
+      ? '<button class="say-sm" title="Obnovit" onclick="unhideWord('+w.id+')">↩</button>'
+      : '<button class="say-sm" title="Skrýt" onclick="hideWord('+w.id+')">🚫</button>';
     return '<div class="item">'+
       '<span class="dot" style="background:'+BOXVAR[w.box]+'"></span>'+
       '<div class="txt" onclick="openWordInCards('+w.id+')">'+primary+secondary+'</div>'+
       '<button class="say-sm" onclick="speakWordById('+w.id+')">🔊</button>'+
+      action+
       '<button class="del" onclick="delWord('+w.id+')">✕</button>'+
     '</div>';
   }).join('');
 }
+function hideWord(id){const w=words.find(x=>x.id===id);if(w){w.hidden=true;save();renderList();toast('Skryto – v souboru zůstává');}}
+function unhideWord(id){const w=words.find(x=>x.id===id);if(w){w.hidden=false;save();renderList();toast('Obnoveno');}}
 function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.foreign, LANGS[w.lang].tts);}
 function openWordInCards(id){
   const w=words.find(x=>x.id===id);if(!w)return;
-  ['translate','list','learn','stats','settings'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
+  ['translate','list','learn','stats','settings','guide'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
   reviewedThisSession=0;hardStreak=0;sessionAll=false;queue=[];flipped=false;
   document.getElementById('learnEmpty').classList.add('hidden');
   document.getElementById('learnNothingDue').classList.add('hidden');
@@ -692,16 +767,18 @@ async function exportWords(){
   const fname='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
   const payload={
     _ctena_aplikaci:'Slovíčka — zálohový soubor. Pole začínající podtržítkem jsou jen pokyny, aplikace je ignoruje.',
-    _ai_instrukce:'Jsi pomocník pro doplňování slovíček. Pokud uživatel přiloží fotku slovníku nebo seznamu slovíček, přidej z ní NOVÁ slovíčka do pole "words" v tomto souboru. Pravidla: '
-      +'1) Jazyk nových slov je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština), POKUD uživatel neřekne jinak nebo fotka jednoznačně neukazuje jiný jazyk; když si nejsi jistý/á, zeptej se. '
-      +'2) Na fotce bývá jeden sloupec česky (pole "cs") a druhý cizí slovo (pole "foreign"); češtinu poznáš podle diakritiky a českých slov. Spáruj je po řádcích. '
-      +'3) Každé nové slovíčko je objekt s poli podle "_schema". box dej vždy 1, lastReviewed dej null, do "added" i "due" zkopíruj číslo z pole "now_ms" tohoto souboru, "id" dej unikátní (např. now_ms + pořadové číslo). "pron" (výslovnost) a "pos" (slovní druh) nech prázdné, pokud je neznáš. '
-      +'4) NEPŘIDÁVEJ duplicity: pokud už ve "words" existuje záznam se stejnou trojicí lang + cs + foreign, vynech ho. Ale různé významy (jiné "foreign" u stejného "cs", nebo naopak) přidat smíš. '
-      +'5) Neměň existující slovíčka ani pole "settings". Vrať CELÝ upravený soubor jako platný JSON.',
-    _schema:{lang:'en | de | es', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1 = učím se (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo'},
+    _ai_instrukce:'Jsi pomocník pro doplňování slovíček. Uživatel ti dá tento soubor a k němu buď FOTKU slovníku/seznamu, nebo NAKOPÍROVANÝ TEXT. Tvým úkolem je najít slovíčka a přidat NOVÁ do pole "words". Pravidla: '
+      +'1) Zdroj může být fotka i text. Z textu vyber všechna smysluplná slovíčka/výrazy a jejich český překlad; pokud je text jen v jednom jazyce, dopřeklad doplň. '
+      +'2) Jazyk nových slov je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština), POKUD uživatel neřekne jinak nebo zdroj jednoznačně neukazuje jiný jazyk; když si nejsi jistý/á, ZEPTEJ SE. '
+      +'3) Pár sloupců: jeden je česky (pole "cs", poznáš podle diakritiky), druhý cizí (pole "foreign"). '
+      +'4) Každé nové slovíčko = objekt podle "_schema". box dej vždy 1 (učím se), lastReviewed null, do "added" i "due" zkopíruj číslo z "now_ms", "id" dej unikátní (např. now_ms + pořadové číslo), "hidden" dej false. "pron" a "pos" nech "" pokud je neznáš. '
+      +'5) DUPLICITY: NEPŘIDÁVEJ slovíčko, které už v "words" je. Za duplicitu se považuje POUZE shoda v OBOU významech zároveň – tj. stejná kombinace lang + cs + foreign (porovnávej bez ohledu na velikost písmen). Když se shoduje jen jedna strana (stejné české slovo, ale jiný cizí překlad, nebo naopak), jde o JINÝ význam a ten PŘIDEJ jako nový záznam. Před přidáním každého slova projdi celé pole "words" (včetně položek s "hidden": true) a ověř, že tam tato trojice ještě není. '
+      +'6) NEMĚŇ stávající slovíčka – zejména neměň jejich "box" (stav učení), "lastReviewed", "hidden" ani nic jiného. Slova s "hidden": true nech být a nepřidávej je znovu (uživatel je schválně skryl jako známá). '
+      +'7) Neměň pole "settings". Vrať CELÝ upravený soubor jako platný JSON.',
+    _schema:{lang:'en | de | es', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1 = učím se (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', hidden:'false (true = skryté, nepřidávat znovu)', id:'unikátní číslo'},
     now_ms:Date.now(),
     defaultLang:activeLang,
-    app:'Slovíčka', version:4, savedAt:new Date().toISOString(),
+    app:'Slovíčka', version:5, savedAt:new Date().toISOString(),
     settings:settings,
     words:words
   };
@@ -754,7 +831,8 @@ function mergeWords(incoming){
       added:toMs(it.added),
       due:toMs(it.due),
       pos:it.pos||'',
-      lastReviewed:it.lastReviewed||null
+      lastReviewed:it.lastReviewed||null,
+      hidden: it.hidden===true
     };
     const k=keyOf(norm);
     if(!map.has(k)){map.set(k,norm);added++;}
@@ -831,7 +909,7 @@ function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
   const now=Date.now();
   let next=Infinity;
-  words.forEach(w=>{if(w.lang!==activeLang||w.box===4)return;const d=w.due||0; if(d>now && d<next) next=d;});
+  words.forEach(w=>{if(w.lang!==activeLang||w.hidden||w.box===4)return;const d=w.due||0; if(d>now && d<next) next=d;});
   const el=document.getElementById('nextDueText');
   if(next===Infinity){el.textContent='Až přidáš nová slovíčka, objeví se tu.';return;}
   const hours=Math.ceil((next-now)/3600000);
@@ -847,7 +925,7 @@ function setLearnDir(d){
   document.getElementById('ldB').classList.toggle('on',d==='cs');
   if(currentCard) showCard(); // restart currentCard card from its front side
 }
-function sessionPool(){return words.filter(w=> w.lang===activeLang && (sessionAll ? true : w.box!==4));}
+function sessionPool(){return words.filter(w=> w.lang===activeLang && !w.hidden && (sessionAll ? true : w.box!==4));}
 function weightedPick(cands){
   if(!cands.length)return null;
   const now=Date.now();
@@ -1136,7 +1214,7 @@ function resetSettings(){settings={...SETTINGS_DEFAULTS};saveSettings();renderSe
 
 /* ---------- View switching ---------- */
 function show(v){
-  ['translate','list','learn','stats','settings'].forEach(x=>{
+  ['translate','list','learn','stats','settings','guide'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('on',x===v);
   });
