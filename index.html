@@ -41,12 +41,14 @@
   body.list-locked{height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
   body.list-locked .wrap{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0;}
   body.list-locked #view-list{flex:1;min-height:0;display:flex;flex-direction:column;}
+  body.list-locked #view-list > :not(#wordList){flex:0 0 auto;}
   body.list-locked #wordList{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(80px + env(safe-area-inset-bottom));}
   /* Učení tab: keep card + controls fixed, scroll only the phrases above the buttons */
   body.learn-locked{height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
   body.learn-locked .wrap{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0;}
   body.learn-locked #view-learn{flex:1;min-height:0;display:flex;flex-direction:column;}
   body.learn-locked #learnArea{flex:1;min-height:0;display:flex;flex-direction:column;}
+  body.learn-locked #learnArea > :not(#exampleBox){flex:0 0 auto;}
   body.learn-locked #exampleBox{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--learnbar-h,140px) + 74px + env(safe-area-inset-bottom));}
   body.learn-locked #learnSpacer{display:none;}
   header{
@@ -109,9 +111,8 @@
   .langsq.armed{background:#3a352f;color:var(--ink);border-color:#4a443c;}
   .langsq.saved{background:var(--c-known);color:#15200a;border-color:var(--c-known);cursor:default;}
   .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
-  .cardpron{margin-top:8px;font-size:15px;color:#e3d7c4;cursor:pointer;min-height:20px;}
+  .cardpron{margin-top:8px;font-size:15px;color:#e3d7c4;min-height:20px;}
   .cardpron .pron-txt{border-bottom:1px dashed var(--line);}
-  .cardpron .pron-add{color:var(--ink-faint);font-size:13px;border:1px dashed var(--line);border-radius:20px;padding:2px 10px;}
   .cardpron input{width:170px;text-align:center;font-size:15px;padding:6px 10px;}
 
   /* Word list */
@@ -126,7 +127,7 @@
   .stat.on{opacity:1;}
   .stat.s-learn.on{border-color:var(--c-learn);} .stat.s-almost.on{border-color:var(--c-almost);} .stat.s-known.on{border-color:var(--c-known);} .stat.s-done.on{border-color:var(--c-done);}
   .stat b{display:block;font-family:'Fraunces',serif;font-size:24px;line-height:1;}
-  .stat small{font-size:11px;color:var(--ink-soft);letter-spacing:.3px;}
+  .stat small{font-size:10.5px;color:var(--ink-soft);letter-spacing:.2px;white-space:nowrap;}
   .s-learn b{color:var(--c-learn);} .s-almost b{color:var(--c-almost);} .s-known b{color:var(--c-known);} .s-done b{color:var(--c-done);}
 
   .item{
@@ -232,7 +233,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v60</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v62</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -305,13 +306,15 @@
         <button class="say" id="cardEditBtn" style="left:auto;right:12px;bottom:12px;top:auto;" onclick="event.stopPropagation();openCardEdit()">✎</button>
         <span class="side-label" id="cardSide"></span>
         <span class="word" id="cardWord"></span>
-        <span class="cardpron" id="cardPron" onclick="event.stopPropagation();editCardPron()"></span>
+        <span class="cardpron" id="cardPron"></span>
         <span class="hint" id="cardPos" style="margin-top:8px;color:var(--ink-faint);font-size:13px;"></span>
         <span class="hint" id="cardHint">ťukni pro otočení</span>
       </div>
       <div id="cardEditPanel" class="panel hidden" style="margin-top:12px;">
         <label class="fld" id="editEnLabel">Anglicky</label>
         <input type="text" id="editEn">
+        <label class="fld" style="margin-top:8px;">Výslovnost</label>
+        <input type="text" id="editPron" placeholder="nepovinné">
         <label class="fld" style="margin-top:8px;">Česky</label>
         <input type="text" id="editCs">
         <div style="display:flex;gap:8px;margin-top:12px;">
@@ -381,7 +384,7 @@
       <p><b>Známá slova:</b> u slova v seznamu je značka <b>⊘</b>. Když je <b>šedá</b>, slovíčko se normálně procvičuje; ťuknutím ho přepneš na <b>Naučeno už nenabízet</b> a značka <b>zčervená</b>. Slovo zůstane v seznamu i v souboru (AI ho nepřidá znovu), ale přestane se nabízet v učení. Dalším ťuknutím (na červenou ⊘) ho vrátíš zpět k učení.</p>
 
       <h3>Učení</h3>
-      <p>Nekonečné procvičování kartiček. Ťuknutím kartičku otočíš, pak ohodnotíš <b>Neumím / Trochu umím / Umím</b>, nebo <b>Naučeno už nenabízet</b> (přestane se nabízet). Co neumíš, vrátí se brzy; známé se přimíchávají méně. Směr (česky → cizí / opačně) přepneš nahoře. Na cizí straně je pole <b>výslovnosti</b> – ťukni na „+ výslovnost" nebo na stávající a přepiš; uloží se, jakmile klikneš jinam nebo dáš Enter.</p>
+      <p>Nekonečné procvičování kartiček. Ťuknutím kartičku otočíš, pak ohodnotíš <b>Neumím / Trochu umím / Umím</b>, nebo <b>Naučeno už nenabízet</b> (přestane se nabízet). Co neumíš, vrátí se brzy; známé se přimíchávají méně. Směr (česky → cizí / opačně) přepneš nahoře. Na cizí straně se ukáže <b>výslovnost</b> (je-li uložená). Slovo, překlad i výslovnost upravíš přes tužku <b>✎</b> na kartičce.</p>
 
       <h3>Statistika a Nastavení</h3>
       <p>Statistika ukazuje počty a vývoj v čase pro aktuální jazyk. V Nastavení vyladíš chování učení (jak rychle se vrací neznámá slova, jak často se míchají kategorie).</p>
@@ -543,7 +546,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v60';
+const APP_VER='v62';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -798,6 +801,7 @@ function openWordInCards(id){
 function openCardEdit(){
   const w=currentCard;if(!w)return;
   document.getElementById('editEn').value=w.foreign;
+  document.getElementById('editPron').value=w.pron||'';
   document.getElementById('editCs').value=w.cs;
   document.getElementById('cardEditPanel').classList.remove('hidden');
   updateLearnBar();
@@ -807,9 +811,11 @@ function saveCardEdit(){
   const w=currentCard;if(!w)return;
   const fw=document.getElementById('editEn').value.trim();
   const cs=document.getElementById('editCs').value.trim();
-  if(!fw||!cs){toast('Vyplň obě pole');return;}
+  const pron=document.getElementById('editPron').value.trim();
+  if(!fw||!cs){toast('Vyplň slovo i překlad');return;}
   const real=words.find(x=>x.id===w.id)||w;
-  real.foreign=fw;real.cs=cs;w.foreign=fw;w.cs=cs;
+  real.foreign=fw;real.cs=cs;real.pron=pron;
+  w.foreign=fw;w.cs=cs;w.pron=pron;
   save();renderList();showCard();closeCardEdit();
   toast('Upraveno ✓');
 }
@@ -1095,26 +1101,10 @@ function flipCard(){
 function showingForeign(){return currentCard && (((learnDir==='fw')&&!flipped)||((learnDir==='cs')&&flipped));}
 function renderCardPron(){
   const el=document.getElementById('cardPron');if(!el)return;
-  if(!showingForeign()){el.classList.add('hidden');el.innerHTML='';return;}
+  const p=showingForeign()?currentCard.pron:'';
+  if(!p){el.classList.add('hidden');el.innerHTML='';return;}
   el.classList.remove('hidden');
-  const p=currentCard.pron;
-  el.innerHTML = p ? ('<span class="pron-txt">['+esc(p)+']</span>') : ('<span class="pron-add">+ výslovnost</span>');
-}
-function editCardPron(){
-  if(!currentCard || !showingForeign())return;
-  const host=document.getElementById('cardPron');
-  host.innerHTML='<input id="pronInput" type="text" placeholder="výslovnost">';
-  const inp=document.getElementById('pronInput');
-  inp.value=currentCard.pron||'';
-  inp.focus();
-  let saved=false;
-  const finish=()=>{ if(saved)return; saved=true;
-    const v=inp.value.trim();
-    const real=words.find(x=>x.id===currentCard.id)||currentCard;
-    real.pron=v;currentCard.pron=v;save();renderCardPron();
-  };
-  inp.addEventListener('blur',finish);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
+  el.innerHTML='<span class="pron-txt">['+esc(p)+']</span>';
 }
 function rate(box){
   const w=currentCard; if(!w)return;
