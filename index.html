@@ -87,10 +87,14 @@
   .opt.saved .opt-add{background:var(--c-known);color:#fff;}
 
   /* Word list */
-  .listhead{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px;}
-  .listhead h2{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin:0;}
-  .stats{display:flex;gap:8px;margin-bottom:14px;}
-  .stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px;text-align:center;cursor:pointer;user-select:none;opacity:.4;transition:opacity .15s,border-color .15s;}
+  .listhead{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 8px;}
+  .listhead h2{font-family:'Fraunces',serif;font-weight:600;font-size:18px;margin:0;}
+  .stats{display:flex;gap:6px;margin-bottom:8px;}
+  .stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:7px 4px;text-align:center;cursor:pointer;user-select:none;opacity:.4;transition:opacity .15s,border-color .15s;}
+  .stat b{display:block;font-family:'Fraunces',serif;font-size:19px;line-height:1;}
+  #listLangRow{margin-bottom:8px !important;}
+  #listLangRow button{padding:6px;font-size:13px;}
+  #listSearch{padding:9px 12px;font-size:15px;}
   .stat.on{opacity:1;}
   .stat.s-learn.on{border-color:var(--c-learn);} .stat.s-almost.on{border-color:var(--c-almost);} .stat.s-known.on{border-color:var(--c-known);} .stat.s-done.on{border-color:var(--c-done);}
   .stat b{display:block;font-family:'Fraunces',serif;font-size:24px;line-height:1;}
@@ -166,7 +170,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v21</span>
+  <span class="tag">EN · CS · v22</span>
 </header>
 
 <div class="wrap">
@@ -199,9 +203,9 @@
       <div class="stat s-known" id="stat3" onclick="toggleBoxFilter(3)"><b id="stKnown">0</b><small>umím</small></div>
       <div class="stat s-done" id="stat4" onclick="toggleBoxFilter(4)"><b id="stDone">0</b><small>naučeno</small></div>
     </div>
-    <div style="display:flex;gap:8px;margin:0 0 14px;">
-      <button class="btn ghost" style="margin:0;font-size:14px;padding:11px;flex:1;" onclick="exportWords()">⬇ Záloha</button>
-      <button class="btn ghost" style="margin:0;font-size:14px;padding:11px;flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
+    <div style="display:flex;gap:8px;margin:0 0 8px;">
+      <button class="btn ghost" style="margin:0;font-size:13px;padding:8px;flex:1;" onclick="exportWords()">⬇ Záloha</button>
+      <button class="btn ghost" style="margin:0;font-size:13px;padding:8px;flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
       <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
     </div>
     <div class="listhead">
@@ -212,7 +216,7 @@
       <button id="llEn" class="on" onclick="setListLang('en')">Anglicky</button>
       <button id="llCs" onclick="setListLang('cs')">Česky</button>
     </div>
-    <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:12px;">
+    <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:10px;">
     <div id="wordList"></div>
   </section>
 
