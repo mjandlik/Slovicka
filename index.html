@@ -220,7 +220,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v55</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v56</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -526,7 +526,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v55';
+const APP_VER='v56';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1274,6 +1274,7 @@ to=activeLang; from='cs';
 renderLangbar();
 if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged=loadVoices; }
 if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
 refreshLabels();renderList();updateBackupBanner();
 document.getElementById('src').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();translateNow();}});
 
