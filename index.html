@@ -215,7 +215,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v52</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v54</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -521,7 +521,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v52';
+const APP_VER='v54';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1271,6 +1271,21 @@ if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoicesch
 if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
 refreshLabels();renderList();updateBackupBanner();
 document.getElementById('src').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();translateNow();}});
+
+/* ---------- silent auto-update: load the newest version when one is published ---------- */
+(async function checkForUpdate(){
+  try{
+    if(sessionStorage.getItem('verChecked')==='1')return; // once per launch, prevents reload loops
+    sessionStorage.setItem('verChecked','1');
+    const res=await fetch('./index.html',{cache:'no-store'});
+    if(!res.ok)return;
+    const txt=await res.text();
+    const m=txt.match(/APP_VER='(v\d+)'/);
+    if(m && m[1]!==APP_VER){
+      location.replace('./?u='+m[1]); // fresh URL → bypasses cache, loads the new build
+    }
+  }catch(e){/* offline → keep the current version */}
+})();
 </script>
 </body>
 </html>
