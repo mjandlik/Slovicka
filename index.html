@@ -168,6 +168,14 @@
   .chartcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 12px 10px;margin-bottom:14px;}
   .chartcard h3{margin:0 0 4px;font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--ink);padding:0 4px;}
   .chartcard p.sub{margin:0 0 8px;padding:0 4px;font-size:12px;color:var(--ink-faint);}
+  .setrow{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;}
+  .setrow .info{flex:1;min-width:0;}
+  .setrow .info .lbl{font-weight:600;font-size:15px;color:var(--ink);}
+  .setrow .info .dsc{font-size:12px;color:var(--ink-faint);margin-top:2px;}
+  .stepper{display:flex;align-items:center;gap:0;flex:0 0 auto;}
+  .stepper button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .stepper button:active{background:var(--accent);color:var(--accent-ink);}
+  .stepper .val{min-width:34px;text-align:center;font-family:'Fraunces',serif;font-size:20px;color:var(--ink);}
   .toast{
     position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
     background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:30px;font-weight:600;font-size:14px;
@@ -181,7 +189,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v29</span>
+  <span class="tag">EN · CS · v30</span>
 </header>
 
 <div class="wrap">
@@ -287,6 +295,15 @@
     <div style="height:90px;"></div>
   </section>
 
+  <!-- ============ SETTINGS ============ -->
+  <section id="view-settings" class="hidden">
+    <div class="listhead"><h2>Nastavení</h2></div>
+    <p class="sub" style="margin:0 0 14px;color:var(--ink-faint);font-size:13px;">Parametry algoritmu učení. Změny se uloží hned.</p>
+    <div id="settingsList"></div>
+    <button class="btn ghost" style="margin-top:6px;" onclick="resetSettings()">Obnovit výchozí hodnoty</button>
+    <div style="height:90px;"></div>
+  </section>
+
 </div>
 
 <div id="learnBar" class="hidden">
@@ -303,6 +320,7 @@
   <button id="nav-list" onclick="show('list')"><span class="ic">☰</span>Slovíčka</button>
   <button id="nav-learn" onclick="show('learn')"><span class="ic">◧</span>Učení</button>
   <button id="nav-stats" onclick="show('stats')"><span class="ic">▦</span>Statistika</button>
+  <button id="nav-settings" onclick="show('settings')"><span class="ic">⚙</span>Nastavení</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -513,7 +531,7 @@ function renderList(){
 function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.en,'en-US');}
 function openWordInCards(id){
   const w=words.find(x=>x.id===id);if(!w)return;
-  ['translate','list','learn','stats'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
+  ['translate','list','learn','stats','settings'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
   reviewedThisSession=0;hardStreak=0;sessionAll=false;queue=[];flipped=false;
   document.getElementById('learnEmpty').classList.add('hidden');
   document.getElementById('learnNothingDue').classList.add('hidden');
@@ -632,10 +650,19 @@ function syncWords(ev){
 const INTERVAL_DAYS={1:1,2:3,3:7};
 const DAY_MS=86400000;
 // Session tuning
-const GAP_NEUMIM=3;          // re-show a "neumím" card after ~3 cards
-const GAP_SKORO=8;           // re-show a "skoro" card after ~8 cards
-const MAX_HARD_IN_ROW=2;     // never show more than this many "učím se" cards in a row
-const POOL_WEIGHT={1:4,2:3,3:2,4:1}; // weaker categories picked more often
+// Adjustable learning parameters (editable in Nastavení)
+const SETTINGS_DEFAULTS={gapNeumim:3,gapSkoro:8,maxHard:2,wLearn:4,wAlmost:3,wKnown:2};
+const SETTING_DEFS=[
+  {key:'gapNeumim',label:'Návrat „Neumím"',desc:'Za kolik kartiček se znovu objeví slovíčko, které neumíš',min:1,max:15},
+  {key:'gapSkoro',label:'Návrat „Skoro"',desc:'Za kolik kartiček se znovu objeví slovíčko ohodnocené „skoro"',min:2,max:30},
+  {key:'maxHard',label:'Max „učím se" za sebou',desc:'Kolik těžkých kartiček smí jít po sobě, než přijde lehčí',min:1,max:6},
+  {key:'wLearn',label:'Váha „učím se"',desc:'Jak často se nabízejí slovíčka z kategorie učím se',min:1,max:9},
+  {key:'wAlmost',label:'Váha „skoro"',desc:'Jak často se nabízejí slovíčka z kategorie skoro',min:1,max:9},
+  {key:'wKnown',label:'Váha „umím"',desc:'Jak často se přimíchávají slovíčka z kategorie umím',min:1,max:9}
+];
+let settings={...SETTINGS_DEFAULTS};
+function loadSettings(){try{const s=JSON.parse(localStorage.getItem(KEY+'_settings')||'{}');settings={...SETTINGS_DEFAULTS,...s};}catch(e){settings={...SETTINGS_DEFAULTS};}}
+function saveSettings(){try{localStorage.setItem(KEY+'_settings',JSON.stringify(settings));}catch(e){}}
 const QUEUE_MIN=4, QUEUE_FILL=12;
 let queue=[];                // upcoming cards (references into words)
 let currentCard=null;            // currently shown card
@@ -665,7 +692,7 @@ function sessionPool(){return words.filter(w=> sessionAll ? true : w.box!==4);}
 function weightedPick(cands){
   if(!cands.length)return null;
   const now=Date.now();
-  let total=0;const ws=cands.map(w=>{let wt=POOL_WEIGHT[w.box]||1;if((w.due||0)<=now)wt*=2;total+=wt;return wt;});
+  let total=0;const ws=cands.map(w=>{let wt=(w.box===1?settings.wLearn:w.box===2?settings.wAlmost:w.box===3?settings.wKnown:1)||1;if((w.due||0)<=now)wt*=2;total+=wt;return wt;});
   let r=Math.random()*total;
   for(let i=0;i<cands.length;i++){r-=ws[i];if(r<=0)return cands[i];}
   return cands[cands.length-1];
@@ -691,8 +718,8 @@ function nextCard(){
   if(queue.length<QUEUE_MIN) refillQueue();
   if(!queue.length){currentCard=null;return false;}
   let idx=0;
-  // never more than MAX_HARD_IN_ROW "učím se" cards in a row → pull an easier one forward
-  if(hardStreak>=MAX_HARD_IN_ROW && queue[0] && queue[0].box===1){
+  // never more than settings.maxHard "učím se" cards in a row → pull an easier one forward
+  if(hardStreak>=settings.maxHard && queue[0] && queue[0].box===1){
     const j=queue.findIndex(w=>w.box!==1);
     if(j>=0) idx=j;
     else{
@@ -770,8 +797,8 @@ function rate(box){
   reviewedThisSession++;
   save();
   // short-term behaviour within this endless session
-  if(box===1) insertSoon(real,GAP_NEUMIM);        // neumím → comes back soon
-  else if(box===2) insertSoon(real,GAP_SKORO);     // skoro → comes back later
+  if(box===1) insertSoon(real,settings.gapNeumim);    // neumím → comes back soon
+  else if(box===2) insertSoon(real,settings.gapSkoro); // skoro → comes back later
   else queue=queue.filter(x=>x!==real);            // umím / naučeno → leave the loop
   if(nextCard()) showCard(); else finishLearn();
 }
@@ -888,19 +915,42 @@ function renderStats(){
       svgChart({type:'line',labels:labels,series:[{values:cumKnown,color:'var(--c-known)',fill:true}]})+'</div>';
 }
 
+/* ---------- Settings UI ---------- */
+function renderSettings(){
+  document.getElementById('settingsList').innerHTML=SETTING_DEFS.map(d=>
+    '<div class="setrow">'+
+      '<div class="info"><div class="lbl">'+d.label+'</div><div class="dsc">'+d.desc+'</div></div>'+
+      '<div class="stepper">'+
+        '<button onclick="changeSetting(\''+d.key+'\',-1)">−</button>'+
+        '<span class="val" id="set-'+d.key+'">'+settings[d.key]+'</span>'+
+        '<button onclick="changeSetting(\''+d.key+'\',1)">+</button>'+
+      '</div>'+
+    '</div>').join('');
+}
+function changeSetting(key,delta){
+  const def=SETTING_DEFS.find(d=>d.key===key);if(!def)return;
+  let v=(settings[key]||0)+delta;
+  if(v<def.min)v=def.min; if(v>def.max)v=def.max;
+  settings[key]=v;saveSettings();
+  const el=document.getElementById('set-'+key);if(el)el.textContent=v;
+}
+function resetSettings(){settings={...SETTINGS_DEFAULTS};saveSettings();renderSettings();toast('Obnoveno na výchozí');}
+
 /* ---------- View switching ---------- */
 function show(v){
-  ['translate','list','learn','stats'].forEach(x=>{
+  ['translate','list','learn','stats','settings'].forEach(x=>{
     document.getElementById('view-'+x).classList.toggle('hidden',x!==v);
     document.getElementById('nav-'+x).classList.toggle('on',x===v);
   });
   if(v==='list')renderList();
   if(v==='learn')startLearn();
   if(v==='stats')renderStats();
+  if(v==='settings')renderSettings();
   updateLearnBar();
 }
 
 /* ---------- init ---------- */
+loadSettings();
 if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged=loadVoices; }
 if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
 refreshLabels();renderList();updateBackupBanner();
