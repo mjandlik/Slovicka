@@ -176,6 +176,8 @@
   .stepper button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .stepper button:active{background:var(--accent);color:var(--accent-ink);}
   .stepper .val{min-width:34px;text-align:center;font-family:'Fraunces',serif;font-size:20px;color:var(--ink);}
+  .weightinfo{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:2px 0 16px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+  .weightinfo b{color:var(--accent);font-family:'Fraunces',serif;}
   .toast{
     position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
     background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:30px;font-weight:600;font-size:14px;
@@ -189,7 +191,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v31</span>
+  <span class="tag">EN · CS · v32</span>
 </header>
 
 <div class="wrap">
@@ -300,6 +302,7 @@
     <div class="listhead"><h2>Nastavení</h2></div>
     <p class="sub" style="margin:0 0 14px;color:var(--ink-faint);font-size:13px;">Parametry algoritmu učení. Změny se uloží hned.</p>
     <div id="settingsList"></div>
+    <div id="weightInfo" class="weightinfo"></div>
     <button class="btn ghost" style="margin-top:6px;" onclick="resetSettings()">Obnovit výchozí hodnoty</button>
     <div style="height:90px;"></div>
   </section>
@@ -674,9 +677,9 @@ const SETTING_DEFS=[
   {key:'gapNeumim',label:'Návrat „Neumím"',desc:'Za kolik kartiček se znovu objeví slovíčko, které neumíš',min:1,max:15},
   {key:'gapSkoro',label:'Návrat „Skoro"',desc:'Za kolik kartiček se znovu objeví slovíčko ohodnocené „skoro"',min:2,max:30},
   {key:'maxHard',label:'Max „učím se" za sebou',desc:'Kolik těžkých kartiček smí jít po sobě, než přijde lehčí',min:1,max:6},
-  {key:'wLearn',label:'Váha „učím se"',desc:'Jak často se nabízejí slovíčka z kategorie učím se',min:1,max:9},
-  {key:'wAlmost',label:'Váha „skoro"',desc:'Jak často se nabízejí slovíčka z kategorie skoro',min:1,max:9},
-  {key:'wKnown',label:'Váha „umím"',desc:'Jak často se přimíchávají slovíčka z kategorie umím',min:1,max:9}
+  {key:'wLearn',label:'Váha „učím se"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9},
+  {key:'wAlmost',label:'Váha „skoro"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9},
+  {key:'wKnown',label:'Váha „umím"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9}
 ];
 let settings={...SETTINGS_DEFAULTS};
 function loadSettings(){try{const s=JSON.parse(localStorage.getItem(KEY+'_settings')||'{}');settings={...SETTINGS_DEFAULTS,...s};}catch(e){settings={...SETTINGS_DEFAULTS};}}
@@ -934,6 +937,13 @@ function renderStats(){
 }
 
 /* ---------- Settings UI ---------- */
+function updateWeightInfo(){
+  const el=document.getElementById('weightInfo');if(!el)return;
+  const a=settings.wLearn,b=settings.wAlmost,c=settings.wKnown,t=a+b+c;
+  const p=x=>Math.round(x/t*100);
+  el.innerHTML='Co znamenají váhy: z přibližně každých 100 nabídnutých kartiček bude '+
+    '<b>'+p(a)+'</b> z „učím se", <b>'+p(b)+'</b> z „skoro" a <b>'+p(c)+'</b> z „umím".';
+}
 function renderSettings(){
   document.getElementById('settingsList').innerHTML=SETTING_DEFS.map(d=>
     '<div class="setrow">'+
@@ -944,6 +954,7 @@ function renderSettings(){
         '<button onclick="changeSetting(\''+d.key+'\',1)">+</button>'+
       '</div>'+
     '</div>').join('');
+  updateWeightInfo();
 }
 function changeSetting(key,delta){
   const def=SETTING_DEFS.find(d=>d.key===key);if(!def)return;
@@ -951,6 +962,7 @@ function changeSetting(key,delta){
   if(v<def.min)v=def.min; if(v>def.max)v=def.max;
   settings[key]=v;saveSettings();
   const el=document.getElementById('set-'+key);if(el)el.textContent=v;
+  updateWeightInfo();
 }
 function resetSettings(){settings={...SETTINGS_DEFAULTS};saveSettings();renderSettings();toast('Obnoveno na výchozí');}
 
