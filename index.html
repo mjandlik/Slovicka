@@ -181,7 +181,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v26</span>
+  <span class="tag">EN · CS · v27</span>
 </header>
 
 <div class="wrap">
@@ -243,8 +243,8 @@
     </div>
     <div id="learnArea" class="hidden">
       <div class="dir" id="learnDirRow" style="margin-bottom:14px;">
-        <button id="ldA" class="on" onclick="setLearnDir('en')">Anglicky → Česky</button>
-        <button id="ldB" onclick="setLearnDir('cs')">Česky → Anglicky</button>
+        <button id="ldA" onclick="setLearnDir('en')">Anglicky → Česky</button>
+        <button id="ldB" class="on" onclick="setLearnDir('cs')">Česky → Anglicky</button>
       </div>
       <div class="progress" id="learnProgress"></div>
       <div class="flash" id="flash" onclick="flipCard()">
@@ -627,7 +627,7 @@ function syncWords(ev){
 // Days until a word is offered again, by category after rating.
 const INTERVAL_DAYS={1:1,2:3,3:7};
 const DAY_MS=86400000;
-let queue=[],qi=0,flipped=false,learnDir='en',reviewedThisSession=0; // 'en' = EN→CS, 'cs' = CS→EN
+let queue=[],qi=0,flipped=false,learnDir='cs',reviewedThisSession=0; // 'en' = EN→CS, 'cs' = CS→EN
 function animWord(){const el=document.getElementById('cardWord');el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
 function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
