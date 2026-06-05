@@ -120,6 +120,8 @@
   .item .say-sm{flex:0 0 auto;background:transparent;border:none;color:var(--ink-soft);font-size:18px;cursor:pointer;padding:4px 6px;}
   .item .en{font-size:16px;font-weight:600;}
   .item .pron-mini{font-size:12px;font-weight:400;color:var(--ink-faint);}
+  .item .stopbtn{color:var(--ink-faint);font-size:18px;}
+  .item .stopbtn.active{color:#e0573f;}
   .item .cs{font-size:14px;color:var(--ink-soft);}
   .item .del{background:transparent;border:none;color:var(--ink-faint);font-size:19px;cursor:pointer;padding:4px 6px;}
   .empty-note{text-align:center;color:var(--ink-faint);padding:40px 10px;font-size:15px;line-height:1.5;}
@@ -211,7 +213,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v38</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v40</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -240,10 +242,10 @@
       <button class="btn" style="margin:0;width:auto;padding:9px 15px;font-size:14px;" onclick="exportWords()">Zálohovat</button>
     </div>
     <div class="stats">
-      <div class="stat s-learn" id="stat1" onclick="toggleBoxFilter(1)"><b id="stLearn">0</b><small>učím se</small></div>
-      <div class="stat s-almost" id="stat2" onclick="toggleBoxFilter(2)"><b id="stAlmost">0</b><small>skoro</small></div>
-      <div class="stat s-known" id="stat3" onclick="toggleBoxFilter(3)"><b id="stKnown">0</b><small>umím</small></div>
-      <div class="stat s-done" id="stat4" onclick="toggleBoxFilter(4)"><b id="stDone">0</b><small>naučeno</small></div>
+      <div class="stat s-learn" id="stat1" onclick="toggleBoxFilter(1)"><b id="stLearn">0</b><small>Neumím</small></div>
+      <div class="stat s-almost" id="stat2" onclick="toggleBoxFilter(2)"><b id="stAlmost">0</b><small>Trochu umím</small></div>
+      <div class="stat s-known" id="stat3" onclick="toggleBoxFilter(3)"><b id="stKnown">0</b><small>Umím</small></div>
+      <div class="stat s-done" id="stat4" onclick="toggleBoxFilter(4)"><b id="stDone">0</b><small>Naučeno</small></div>
     </div>
     <div style="display:flex;gap:8px;margin:0 0 8px;">
       <button class="btn ghost" style="margin:0;font-size:13px;padding:8px;flex:1;" onclick="exportWords()">⬇ Záloha</button>
@@ -353,7 +355,7 @@
       <p><b>Známá slova:</b> u slova v seznamu je <b>✓</b> (Umím – už nenabízet). Tím ho odložíš: zůstane v seznamu i v souboru (takže ho AI nepřidá znovu), ale přestane se nabízet v učení. Stav poznáš podle barevné tečky; tlačítkem <b>↩</b> ho kdykoli vrátíš zpět k učení.</p>
 
       <h3>Učení</h3>
-      <p>Nekonečné procvičování kartiček. Ťuknutím kartičku otočíš, pak ohodnotíš <b>Neumím / Skoro / Umím</b>, nebo <b>Naučeno</b> (přestane se nabízet). Co neumíš, vrátí se brzy; známé se přimíchávají méně. Směr (česky → cizí / opačně) přepneš nahoře. Na cizí straně je pole <b>výslovnosti</b> – ťukni na „+ výslovnost" nebo na stávající a přepiš; uloží se, jakmile klikneš jinam nebo dáš Enter.</p>
+      <p>Nekonečné procvičování kartiček. Ťuknutím kartičku otočíš, pak ohodnotíš <b>Neumím / Trochu umím / Umím</b>, nebo <b>Naučeno už nenabízet</b> (přestane se nabízet). Co neumíš, vrátí se brzy; známé se přimíchávají méně. Směr (česky → cizí / opačně) přepneš nahoře. Na cizí straně je pole <b>výslovnosti</b> – ťukni na „+ výslovnost" nebo na stávající a přepiš; uloží se, jakmile klikneš jinam nebo dáš Enter.</p>
 
       <h3>Statistika a Nastavení</h3>
       <p>Statistika ukazuje počty a vývoj v čase pro aktuální jazyk. V Nastavení vyladíš chování učení (jak rychle se vrací neznámá slova, jak často se míchají kategorie).</p>
@@ -366,7 +368,7 @@
       <ul>
         <li>Přepni se v appce na jazyk, který se učíš, a dej <b>Záloha</b>.</li>
         <li>V chatu s AI (např. ChatGPT, Claude, Gemini) <b>nahraj tento soubor</b> a k němu buď <b>fotku</b> slovníku/seznamu, nebo <b>nakopíruj text</b>.</li>
-        <li>Napiš třeba: „Přidej do souboru slovíčka z téhle fotky" nebo „...z tohoto textu". AI podle instrukcí v souboru najde slovíčka, přeskočí ta, co už v souboru jsou, a přidá nová jako „učím se".</li>
+        <li>Napiš třeba: „Přidej do souboru slovíčka z téhle fotky" nebo „...z tohoto textu". AI podle instrukcí v souboru najde slovíčka, přeskočí ta, co už v souboru jsou, a přidá nová jako „Neumím".</li>
         <li>Upravený soubor ti AI vrátí – ten pak v appce načteš přes <b>Sync</b>.</li>
       </ul>
       <p>Z textu AI vybere všechna slova, která v souboru ještě nejsou. Existující slovíčka ani jejich pokrok nemění. Pokud nepozná jazyk, zeptá se.</p>
@@ -378,11 +380,11 @@
 
 <div id="learnBar" class="hidden">
   <div class="rate" id="rateRow">
-    <button class="r-learn" onclick="rate(1)">Neumím<small>učím se</small></button>
-    <button class="r-almost" onclick="rate(2)">Skoro<small>skoro</small></button>
-    <button class="r-known" onclick="rate(3)">Umím<small>hotovo</small></button>
+    <button class="r-learn" onclick="rate(1)">Neumím</button>
+    <button class="r-almost" onclick="rate(2)">Trochu umím</button>
+    <button class="r-known" onclick="rate(3)">Umím</button>
   </div>
-  <button class="btn ghost" id="retireBtn" style="margin-top:8px;font-size:14px;padding:10px;" onclick="rate(4)">✓ Naučeno – už nenabízet</button>
+  <button class="btn ghost" id="retireBtn" style="margin-top:8px;font-size:14px;padding:10px;background:var(--surface-2);border-color:#4a443c;color:var(--ink-soft);" onclick="rate(4)">Naučeno už nenabízet</button>
 </div>
 
 <nav>
@@ -489,7 +491,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v38';
+const APP_VER='v40';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -669,7 +671,7 @@ async function savePair(i){
 }
 
 /* ---------- Word list ---------- */
-const BOXNAME={1:'učím se',2:'skoro',3:'umím',4:'naučeno'};
+const BOXNAME={1:'Neumím',2:'Trochu umím',3:'Umím',4:'Naučeno'};
 const BOXVAR={1:'var(--c-learn)',2:'var(--c-almost)',3:'var(--c-known)',4:'var(--c-done)'};
 let boxFilter={1:true,2:true,3:true,4:true};
 function toggleBoxFilter(b){boxFilter[b]=!boxFilter[b];renderList();}
@@ -688,7 +690,9 @@ function renderList(){
   if(!d.length){list.innerHTML='<div class="empty-note">Žádná slovíčka v jazyce '+LANGS[activeLang].name+'.<br>Přelož něco a ulož si to.</div>';return;}
   const qEl=document.getElementById('listSearch');
   const q=qEl?stripDia(qEl.value):'';
-  const shown=d.filter(w=>boxFilter[w.box] && (!q || stripDia(w.foreign).includes(q)||stripDia(w.cs).includes(q)));
+  const coll=new Intl.Collator('cs',{sensitivity:'base'});
+  const shown=d.filter(w=>boxFilter[w.box] && (!q || stripDia(w.foreign).includes(q)||stripDia(w.cs).includes(q)))
+    .sort((a,b)=>coll.compare(listLang==='fw'?a.foreign:a.cs, listLang==='fw'?b.foreign:b.cs));
   if(!shown.length){list.innerHTML='<div class="empty-note">Nic nenalezeno.</div>';return;}
   list.innerHTML=shown.map(w=>{
     const posTag=w.pos?' <span class="opt-pos">'+esc(posLabel(w.pos))+'</span>':'';
@@ -697,14 +701,13 @@ function renderList(){
     const csLine='<div class="cs">'+esc(w.cs)+'</div>';
     const primary = listLang==='fw'?fwLine:csLine;
     const secondary = listLang==='fw'?csLine:fwLine;
-    const stateBtn = w.box===4
-      ? '<button class="say-sm" title="Vrátit k učení" onclick="reviveWord('+w.id+')">↩</button>'
-      : '<button class="say-sm" title="Umím – už nenabízet" onclick="retireWord('+w.id+')">✓</button>';
+    const retired = w.box===4;
+    const stopBtn = '<button class="say-sm stopbtn'+(retired?' active':'')+'" title="'+(retired?'Vrátit k učení':'Naučeno – už nenabízet')+'" onclick="'+(retired?'reviveWord':'retireWord')+'('+w.id+')">⊘</button>';
     return '<div class="item">'+
       '<span class="dot" style="background:'+BOXVAR[w.box]+'"></span>'+
       '<div class="txt" onclick="openWordInCards('+w.id+')">'+primary+secondary+'</div>'+
       '<button class="say-sm" onclick="speakWordById('+w.id+')">🔊</button>'+
-      stateBtn+
+      stopBtn+
       '<button class="del" onclick="delWord('+w.id+')">✕</button>'+
     '</div>';
   }).join('');
@@ -758,11 +761,11 @@ async function exportWords(){
       +'1) Zdroj může být fotka i text. Z textu vyber všechna smysluplná slovíčka/výrazy a jejich český překlad; pokud je text jen v jednom jazyce, dopřeklad doplň. '
       +'2) Jazyk nových slov je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština), POKUD uživatel neřekne jinak nebo zdroj jednoznačně neukazuje jiný jazyk; když si nejsi jistý/á, ZEPTEJ SE. '
       +'3) Pár sloupců: jeden je česky (pole "cs", poznáš podle diakritiky), druhý cizí (pole "foreign"). '
-      +'4) Každé nové slovíčko = objekt podle "_schema". box dej vždy 1 (učím se), lastReviewed null, do "added" i "due" zkopíruj číslo z "now_ms", "id" dej unikátní (např. now_ms + pořadové číslo). "pron" a "pos" nech "" pokud je neznáš. '
+      +'4) Každé nové slovíčko = objekt podle "_schema". box dej vždy 1 (Neumím), lastReviewed null, do "added" i "due" zkopíruj číslo z "now_ms", "id" dej unikátní (např. now_ms + pořadové číslo). "pron" a "pos" nech "" pokud je neznáš. '
       +'5) DUPLICITY: NEPŘIDÁVEJ slovíčko, které už v "words" je. Za duplicitu se považuje POUZE shoda v OBOU významech zároveň – tj. stejná kombinace lang + cs + foreign (porovnávej bez ohledu na velikost písmen). Když se shoduje jen jedna strana (stejné české slovo, ale jiný cizí překlad, nebo naopak), jde o JINÝ význam a ten PŘIDEJ jako nový záznam. Před přidáním projdi celé pole "words" a ověř, že tam tato trojice ještě není. '
       +'6) NEMĚŇ stávající slovíčka – obzvlášť neměň jejich "box" (stav učení), "lastReviewed" ani nic dalšího. Existující slovíčka mohou mít box 1–4; box 4 znamená "umím, už nenabízet" (uživatel je zná) – taková slova NECH BÝT a nepřidávej je znovu. '
       +'7) Neměň pole "settings". Vrať CELÝ upravený soubor jako platný JSON.',
-    _schema:{lang:'en | de | es', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=učím se, 2=skoro, 3=umím, 4=umím/už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo'},
+    _schema:{lang:'en | de | es', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo'},
     now_ms:Date.now(),
     defaultLang:activeLang,
     app:'Slovíčka', version:6, savedAt:new Date().toISOString(),
@@ -877,11 +880,11 @@ const DAY_MS=86400000;
 const SETTINGS_DEFAULTS={gapNeumim:3,gapSkoro:8,maxHard:2,wLearn:4,wAlmost:3,wKnown:2};
 const SETTING_DEFS=[
   {key:'gapNeumim',label:'Návrat „Neumím"',desc:'Za kolik kartiček se znovu objeví slovíčko, které neumíš',min:1,max:15},
-  {key:'gapSkoro',label:'Návrat „Skoro"',desc:'Za kolik kartiček se znovu objeví slovíčko ohodnocené „skoro"',min:2,max:30},
-  {key:'maxHard',label:'Max „učím se" za sebou',desc:'Kolik těžkých kartiček smí jít po sobě, než přijde lehčí',min:1,max:6},
-  {key:'wLearn',label:'Váha „učím se"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9},
-  {key:'wAlmost',label:'Váha „skoro"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9},
-  {key:'wKnown',label:'Váha „umím"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9}
+  {key:'gapSkoro',label:'Návrat „Trochu umím"',desc:'Za kolik kartiček se znovu objeví slovíčko ohodnocené „Trochu umím"',min:2,max:30},
+  {key:'maxHard',label:'Max „Neumím" za sebou',desc:'Kolik těžkých kartiček smí jít po sobě, než přijde lehčí',min:1,max:6},
+  {key:'wLearn',label:'Váha „Neumím"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9},
+  {key:'wAlmost',label:'Váha „Trochu umím"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9},
+  {key:'wKnown',label:'Váha „Umím"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9}
 ];
 let settings={...SETTINGS_DEFAULTS};
 function loadSettings(){try{const s=JSON.parse(localStorage.getItem(KEY+'_settings')||'{}');settings={...SETTINGS_DEFAULTS,...s};}catch(e){settings={...SETTINGS_DEFAULTS};}}
@@ -1146,7 +1149,7 @@ function renderStats(){
   document.getElementById('statNums').innerHTML=
     '<div class="numcard"><b>'+total+'</b><span>slovíček celkem</span></div>'+
     '<div class="numcard"><b style="color:var(--c-known)">'+known+'</b><span>umím <small>('+pct+' %)</small></span></div>'+
-    '<div class="numcard"><b style="color:var(--c-learn)">'+learning+'</b><span>učím se</span></div>'+
+    '<div class="numcard"><b style="color:var(--c-learn)">'+learning+'</b><span>Neumím</span></div>'+
     '<div class="numcard"><b style="color:var(--accent)">'+addedThisWeek+'</b><span>nově tento týden</span></div>';
   const addedTs=d.map(w=>w.added||Date.now());
   const minTs=Math.min.apply(null,addedTs), maxTs=Date.now();
@@ -1164,7 +1167,7 @@ function renderStats(){
       svgChart({type:'bar',labels:labels,series:[{values:newPer,color:'var(--accent)'}]})+'</div>'+
     '<div class="chartcard"><h3>Celkem slovíček</h3><p class="sub">jak roste tvoje slovní zásoba</p>'+
       svgChart({type:'line',labels:labels,series:[{values:cumTotal,color:'var(--accent)',fill:true}]})+'</div>'+
-    '<div class="chartcard"><h3>Umím v čase</h3><p class="sub">slovíčka ve fázi „umím" a „naučeno"</p>'+
+    '<div class="chartcard"><h3>Umím v čase</h3><p class="sub">slovíčka ve fázi „Umím" a „Naučeno"</p>'+
       svgChart({type:'line',labels:labels,series:[{values:cumKnown,color:'var(--c-known)',fill:true}]})+'</div>';
 }
 
@@ -1174,7 +1177,7 @@ function updateWeightInfo(){
   const a=settings.wLearn,b=settings.wAlmost,c=settings.wKnown,t=a+b+c;
   const p=x=>Math.round(x/t*100);
   el.innerHTML='Co znamenají váhy: z přibližně každých 100 nabídnutých kartiček bude '+
-    '<b>'+p(a)+'</b> z „učím se", <b>'+p(b)+'</b> z „skoro" a <b>'+p(c)+'</b> z „umím".';
+    '<b>'+p(a)+'</b> z „Neumím", <b>'+p(b)+'</b> z „Trochu umím" a <b>'+p(c)+'</b> z „Umím".';
 }
 function renderSettings(){
   document.getElementById('settingsList').innerHTML=SETTING_DEFS.map(d=>
