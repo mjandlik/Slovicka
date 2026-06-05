@@ -214,7 +214,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v46</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v47</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -518,7 +518,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v46';
+const APP_VER='v47';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -665,7 +665,13 @@ function retranslate(i){
 function addEntry(lang,cs,foreign,pos,pron){
   cs=(cs||'').trim();foreign=(foreign||'').trim();
   if(!cs||!foreign)return 'empty';
-  if(words.some(w=>w.lang===lang && w.foreign.toLowerCase()===foreign.toLowerCase() && w.cs.toLowerCase()===cs.toLowerCase()))return 'dup';
+  const ex=words.find(w=>w.lang===lang && w.foreign.toLowerCase()===foreign.toLowerCase() && w.cs.toLowerCase()===cs.toLowerCase());
+  if(ex){
+    ex.box=1; ex.due=Date.now();           // already saved → put it back to "Neumím"
+    save();
+    if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
+    return 'reset';
+  }
   words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null});
   save();
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
@@ -684,12 +690,12 @@ async function savePair(i){
     if(optSaved[i].has(L))continue;
     if(L===activeLang){
       const r=addEntry(activeLang,cs,foreign,opt.pos||'',pron);
-      if(r==='ok'||r==='dup') optSaved[i].add(L);
+      if(r==='ok'||r==='dup'||r==='reset') optSaved[i].add(L);
     }else{
       try{
         const res=await smartTranslate(cs,'cs',LANGS[L].gt);
         const fw=(res.text||'').trim();
-        if(fw){ const rr=addEntry(L,cs,fw,'',res.pron||''); if(rr==='ok'||rr==='dup') optSaved[i].add(L); }
+        if(fw){ const rr=addEntry(L,cs,fw,'',res.pron||''); if(rr==='ok'||rr==='dup'||rr==='reset') optSaved[i].add(L); }
       }catch(e){/* network */}
     }
   }
