@@ -189,7 +189,7 @@
 <body>
 <header>
   <h1>Slov<span>í</span>čka EN</h1>
-  <span class="tag">EN · CS · v30</span>
+  <span class="tag">EN · CS · v31</span>
 </header>
 
 <div class="wrap">
@@ -569,7 +569,8 @@ function markBackupDone(){
 async function exportWords(){
   if(!words.length){toast('Nejsou žádná slovíčka');return;}
   const fname='slovicka-zaloha-'+new Date().toISOString().slice(0,10)+'.json';
-  const json=JSON.stringify(words,null,2);
+  const payload={app:'Slovíčka EN', version:2, savedAt:new Date().toISOString(), words:words, settings:settings};
+  const json=JSON.stringify(payload,null,2);
   // 1) Try the system share sheet (lets you pick Disk / Soubory) where it works.
   try{
     const file=new File([json],fname,{type:'application/json'});
@@ -626,6 +627,19 @@ function mergeWords(incoming){
   words=[...map.values()].sort((a,b)=>(b.added||0)-(a.added||0));
   return added;
 }
+function applyIncomingSettings(s){
+  if(!s||typeof s!=='object')return false;
+  let changed=false;
+  SETTING_DEFS.forEach(d=>{
+    let v=s[d.key];
+    if(typeof v==='number' && isFinite(v)){
+      v=Math.round(v); if(v<d.min)v=d.min; if(v>d.max)v=d.max;
+      settings[d.key]=v; changed=true;
+    }
+  });
+  if(changed){ saveSettings(); if(!document.getElementById('view-settings').classList.contains('hidden')) renderSettings(); }
+  return changed;
+}
 function syncWords(ev){
   const file=ev.target.files&&ev.target.files[0];
   ev.target.value='';
@@ -633,11 +647,15 @@ function syncWords(ev){
   const reader=new FileReader();
   reader.onload=function(){
     try{
-      const arr=JSON.parse(reader.result);
-      if(!Array.isArray(arr)) throw new Error('bad');
+      const data=JSON.parse(reader.result);
+      let arr=null, incomingSettings=null;
+      if(Array.isArray(data)){ arr=data; }                                   // old format: bare list
+      else if(data && Array.isArray(data.words)){ arr=data.words; incomingSettings=data.settings||null; } // new format
+      else throw new Error('bad');
       const added=mergeWords(arr);
+      const setApplied = incomingSettings ? applyIncomingSettings(incomingSettings) : false;
       save();renderList(); // marks changes pending → banner will prompt for Záloha
-      toast('Sloučeno: +'+added+' nových, celkem '+words.length+'. Dej Zálohu.');
+      toast('Sloučeno: +'+added+' nových, celkem '+words.length+(setApplied?' • nastavení načteno':'')+'. Dej Zálohu.');
     }catch(e){
       toast('Soubor se nepodařilo načíst');
     }
