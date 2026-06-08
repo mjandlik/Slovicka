@@ -49,7 +49,9 @@
   body.learn-locked #view-learn{flex:1;min-height:0;display:flex;flex-direction:column;}
   body.learn-locked #learnArea{flex:1;min-height:0;display:flex;flex-direction:column;}
   body.learn-locked #view-learn > :not(#learnArea){flex:0 0 auto;}
-  body.learn-locked #learnArea > :not(#exampleBox){flex:0 0 auto;}
+  body.learn-locked #learnArea > #learnDirRow{flex:0 0 auto;}
+  body.learn-locked #learnScroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--learnbar-h,140px) + 74px + env(safe-area-inset-bottom));}
+  body.learn-locked #learnSpacer{display:none;}
   body.learn-locked #exampleBox{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--learnbar-h,140px) + 74px + env(safe-area-inset-bottom));}
   body.learn-locked #learnSpacer{display:none;}
   header{
@@ -254,7 +256,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v68</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v70</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -314,6 +316,7 @@
         <button id="ldA" onclick="setLearnDir('fw')">Anglicky → Česky</button>
         <button id="ldB" class="on" onclick="setLearnDir('cs')">Česky → Anglicky</button>
       </div>
+      <div id="learnScroll">
       <div class="progress" id="learnProgress"></div>
       <div class="flash" id="flash" onclick="flipCard()">
         <span class="badge" id="cardBadge"></span>
@@ -346,6 +349,7 @@
         <div id="examples"></div>
       </div>
       <div id="learnSpacer" style="height:150px;"></div>
+      </div>
     </div>
     <div id="learnDone" class="empty-note hidden">
       <div id="doneMsg">Hotovo.</div>
@@ -432,14 +436,14 @@
       <p>Data jsou jen v prohlížeči – <b>pravidelně dělej Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> (v záložce Slovíčka) ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše. <b>Pozor:</b> vymazání dat/historie prohlížeče data v appce smaže – přežije jen tvůj zálohovaný soubor.</p>
 
       <h3>Import slovíček přes AI (z fotky i textu)</h3>
-      <p>Zálohový soubor obsahuje skryté instrukce pro AI. Můžeš tak nechat slovíčka doplnit umělou inteligencí:</p>
+      <p>Zálohový soubor obsahuje skryté instrukce, díky kterým tě AI sama provede přidáním slovíček:</p>
       <ul>
-        <li>Přepni se v appce na jazyk, který se učíš, a dej <b>Záloha</b>.</li>
-        <li>V chatu s AI (např. ChatGPT, Claude, Gemini) <b>nahraj tento soubor</b> a k němu buď <b>fotku</b> slovníku/seznamu, nebo <b>nakopíruj text</b>.</li>
-        <li>Napiš třeba: „Přidej do souboru slovíčka z téhle fotky" nebo „...z tohoto textu". AI podle instrukcí v souboru najde slovíčka, přeskočí ta, co už v souboru jsou, a přidá nová jako „Neumím".</li>
-        <li>Upravený soubor ti AI vrátí – ten pak v appce načteš přes <b>Sync</b> (v záložce Slovíčka).</li>
+        <li>Přepni se v appce na jazyk, který se učíš, a dej <b>Záloha</b> – uloží se soubor.</li>
+        <li>V chatu s AI (např. ChatGPT, Claude, Gemini) <b>jen nahraj tento soubor</b>. AI sama začne a zeptá se, jak chceš slovíčka dodat.</li>
+        <li>Pošleš <b>fotku</b> slovíček nebo textu, nebo <b>nakopíruješ</b> slovíčka či text. AI se zeptá na jazyk a na sekci (novou, existující, nebo žádnou).</li>
+        <li>AI ti vrátí upravený soubor – ten <b>ulož</b> a v appce načti přes <b>Sync</b> (v záložce Slovíčka). Hotová slovíčka se přidají jako „Neumím".</li>
       </ul>
-      <p>Z textu AI vybere všechna slova, která v souboru ještě nejsou. Existující slovíčka ani jejich pokrok nemění. Pokud nepozná jazyk, zeptá se.</p>
+      <p>AI přidá jen slova, která v souboru ještě nejsou, a stávající slovíčka ani jejich pokrok nemění.</p>
 
       <h3>Soukromí a aktualizace</h3>
       <ul>
@@ -633,7 +637,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v68';
+const APP_VER='v70';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -943,12 +947,12 @@ function openCardEdit(){
   document.getElementById('editCs').value=w.cs;
   editSections=[...(w.sections||[])]; renderEditSecChips();
   document.getElementById('cardEditPanel').classList.remove('hidden');
-  document.body.classList.remove('learn-locked','list-locked'); // allow scrolling to reach all fields + buttons
   updateLearnBar();
+  const ep=document.getElementById('cardEditPanel');
+  requestAnimationFrame(()=>{ try{ep.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){} });
 }
 function closeCardEdit(){
   document.getElementById('cardEditPanel').classList.add('hidden');
-  if(!document.getElementById('view-learn').classList.contains('hidden')) document.body.classList.add('learn-locked');
   updateLearnBar();
 }
 function saveCardEdit(){
@@ -978,15 +982,14 @@ async function exportWords(){
   const fname='slovicka-zaloha-'+_t.getFullYear()+'-'+_p(_t.getMonth()+1)+'-'+_p(_t.getDate())+'_'+_p(_t.getHours())+'-'+_p(_t.getMinutes())+'.json';
   const payload={
     _ctena_aplikaci:'Slovíčka — zálohový soubor. Pole začínající podtržítkem jsou jen pokyny, aplikace je ignoruje.',
-    _ai_instrukce:'Jsi pomocník pro doplňování slovíček. Uživatel ti dá tento soubor a k němu buď FOTKU slovníku/seznamu, nebo NAKOPÍROVANÝ TEXT. Tvým úkolem je najít slovíčka a přidat NOVÁ do pole "words". Pravidla: '
-      +'1) Zdroj může být fotka i text. Z textu vyber všechna smysluplná slovíčka/výrazy a jejich český překlad; pokud je text jen v jednom jazyce, dopřeklad doplň. '
-      +'2) Jazyk nových slov je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština, it=italština, el=řečtina), POKUD uživatel neřekne jinak nebo zdroj jednoznačně neukazuje jiný jazyk; když si nejsi jistý/á, ZEPTEJ SE. '
-      +'3) Pár sloupců: jeden je česky (pole "cs", poznáš podle diakritiky), druhý cizí (pole "foreign"). '
-      +'4) Každé nové slovíčko = objekt podle "_schema". box dej vždy 1 (Neumím), lastReviewed null, do "added" i "due" zkopíruj číslo z "now_ms", "id" dej unikátní (např. now_ms + pořadové číslo). "pron" a "pos" nech "" pokud je neznáš. '
-      +'5) DUPLICITY: NEPŘIDÁVEJ slovíčko, které už v "words" je. Za duplicitu se považuje POUZE shoda v OBOU významech zároveň – tj. stejná kombinace lang + cs + foreign (porovnávej bez ohledu na velikost písmen). Když se shoduje jen jedna strana (stejné české slovo, ale jiný cizí překlad, nebo naopak), jde o JINÝ význam a ten PŘIDEJ jako nový záznam. Před přidáním projdi celé pole "words" a ověř, že tam tato trojice ještě není. '
-      +'6) NEMĚŇ stávající slovíčka – obzvlášť neměň jejich "box" (stav učení), "lastReviewed" ani nic dalšího. Existující slovíčka mohou mít box 1–4; box 4 znamená "umím, už nenabízet" (uživatel je zná) – taková slova NECH BÝT a nepřidávej je znovu. '
-      +'7) SEKCE: každé slovíčko má pole "sections" (pole názvů sekcí, klidně víc). Uživatel ti spolu se zdrojem řekne, co se sekcí: (a) „založ novou sekci X" → přidej do horního pole "sections" nový objekt {name:"X", created: now_ms, lang: stejný jako u slov} a VŠEM novým slovům z této dávky dej do "sections" ["X"]; (b) „přidej do existující sekce Y" → použij PŘESNĚ stejný název Y, který už v "sections" je (nezakládej duplikát), a dej ho novým slovům do "sections"; (c) když uživatel řekne „vypiš sekce", vypiš mu názvy z pole "sections" (pro daný jazyk), ať si vybere. Nepřejmenovávej a neslučuj existující sekce. U už existujících slov sekce neměň. '
-      +'8) Neměň pole "settings". Vrať CELÝ upravený soubor jako platný JSON.',
+    _ai_instrukce:'Jsi PRŮVODCE importem slovíček do aplikace „Slovíčka". Uživatel ti nahrál tento JSON soubor – ber to jako pokyn, že chce přidat nová slovíčka, a sám ho proveď celým procesem. Předpokládej, že neví, jak na to. Komunikuj česky, stručně a přátelsky. POSTUP: '
+      +'KROK 1 (zahájení): Hned po nahrání souboru – i když uživatel nic nenapíše – ho pozdrav, jednou větou řekni, že mu pomůžeš přidat slovíčka, a zeptej se, jak je chce dodat: (a) fotka slovíček/slovníčku, (b) fotka textu (vytáhneš slovíčka z něj), (c) napsaná/nakopírovaná dvojice slovíček, (d) nakopírovaný text. Vyzvi ho, ať pošle zdroj. '
+      +'KROK 2 (jazyk): Urči cílový jazyk nových slov. Výchozí je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština, it=italština, el=řečtina). Pokud zdroj jednoznačně ukazuje jiný jazyk nebo si ho uživatel přeje, použij ten. Když to není jasné, zeptej se. '
+      +'KROK 3 (sekce): Zeptej se, kam slovíčka zařadit: (a) nová sekce – řekne název, ty přidáš do horního pole "sections" objekt {name, created: hodnota now_ms, lang: jazyk slov} a všem novým slovům dáš tento název do "sections"; (b) existující sekce – NABÍDNI mu výpis názvů sekcí z pole "sections" pro daný jazyk, ať si vybere, a použij PŘESNĚ stejný název (nezakládej duplikát); (c) bez sekce – "sections" necháš []. '
+      +'KROK 4 (zpracování): Ze zdroje vytáhni všechna smysluplná slovíčka. Jeden význam = jedno slovo "foreign" + český překlad "cs" (české poznáš podle diakritiky; chybí-li překlad, dopřelož). Každé nové slovíčko vytvoř podle "_schema": box vždy 1 (Neumím), lastReviewed null, do "added" i "due" zkopíruj číslo z "now_ms", "id" unikátní (např. now_ms + pořadí), "pron" a "pos" nech "" pokud je neznáš (u řečtiny a jiného nelatinkového písma doplň přepis výslovnosti do "pron"), "sections" podle KROKU 3. '
+      +'DUPLICITY: nepřidávej slovíčko, které už v "words" je – za duplicitu se počítá jen shoda lang + cs + foreign zároveň (bez ohledu na velikost písmen). Když se shoduje jen jedna strana, je to jiný význam a PŘIDEJ ho. '
+      +'NEMĚŇ stávající slovíčka (box, lastReviewed ani nic jiného); box 4 = „už nenabízet", taková nech být a nepřidávej znovu. Nepřejmenovávej a neslučuj existující sekce. Neměň pole "settings". '
+      +'KROK 5 (výstup): Vrať CELÝ upravený soubor jako JEDEN platný JSON (v bloku kódu, nic víc kolem). Pak uživateli řekni: 1) kolik slov jsi přidal a do jaké sekce, 2) ať si JSON ULOŽÍ jako soubor, 3) ať ho v aplikaci Slovíčka načte přes Sync (záložka Slovíčka → tlačítko Sync). ',
     _schema:{lang:'en | de | es | it | el', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo', sections:'pole názvů sekcí, např. ["Unit 5"] nebo [] '},
     _schema_sekce:{name:'název sekce', created:'čas vzniku v ms (u nové sekce zkopíruj now_ms)', lang:'jazyk sekce: en|de|es|it|el'},
     now_ms:Date.now(),
