@@ -256,7 +256,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v70</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v72</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -637,7 +637,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v70';
+const APP_VER='v72';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -987,8 +987,12 @@ async function exportWords(){
       +'KROK 2 (jazyk): Urči cílový jazyk nových slov. Výchozí je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština, it=italština, el=řečtina). Pokud zdroj jednoznačně ukazuje jiný jazyk nebo si ho uživatel přeje, použij ten. Když to není jasné, zeptej se. '
       +'KROK 3 (sekce): Zeptej se, kam slovíčka zařadit: (a) nová sekce – řekne název, ty přidáš do horního pole "sections" objekt {name, created: hodnota now_ms, lang: jazyk slov} a všem novým slovům dáš tento název do "sections"; (b) existující sekce – NABÍDNI mu výpis názvů sekcí z pole "sections" pro daný jazyk, ať si vybere, a použij PŘESNĚ stejný název (nezakládej duplikát); (c) bez sekce – "sections" necháš []. '
       +'KROK 4 (zpracování): Ze zdroje vytáhni všechna smysluplná slovíčka. Jeden význam = jedno slovo "foreign" + český překlad "cs" (české poznáš podle diakritiky; chybí-li překlad, dopřelož). Každé nové slovíčko vytvoř podle "_schema": box vždy 1 (Neumím), lastReviewed null, do "added" i "due" zkopíruj číslo z "now_ms", "id" unikátní (např. now_ms + pořadí), "pron" a "pos" nech "" pokud je neznáš (u řečtiny a jiného nelatinkového písma doplň přepis výslovnosti do "pron"), "sections" podle KROKU 3. '
-      +'DUPLICITY: nepřidávej slovíčko, které už v "words" je – za duplicitu se počítá jen shoda lang + cs + foreign zároveň (bez ohledu na velikost písmen). Když se shoduje jen jedna strana, je to jiný význam a PŘIDEJ ho. '
-      +'NEMĚŇ stávající slovíčka (box, lastReviewed ani nic jiného); box 4 = „už nenabízet", taková nech být a nepřidávej znovu. Nepřejmenovávej a neslučuj existující sekce. Neměň pole "settings". '
+      +'DUPLICITY (KONTROLUJ U KAŽDÉHO SLOVA ZE ZDROJE): zjisti, zda už v "words" existuje záznam se stejnou kombinací lang + cs + foreign zároveň (bez ohledu na velikost písmen). '
+      +'• Pokud NEEXISTUJE → přidej NOVÝ záznam (box 1, sekce podle KROKU 3). '
+      +'• Pokud UŽ EXISTUJE → NEZAKLÁDEJ druhý záznam; místo toho uprav TEN STÁVAJÍCÍ: (a) do jeho "sections" přidej název sekce z tohoto importu, pokud tam ještě není (ostatní jeho sekce ponech), a (b) nastav mu "box" na 1 (Neumím) a "due" na hodnotu now_ms. Nic jiného u něj neměň. '
+      +'Když se shoduje jen JEDNA strana (stejné cs, jiný foreign – nebo naopak), je to JINÝ význam → přidej jako nový záznam. '
+      +'VÍCE VÝZNAMŮ = VÍCE ZÁZNAMŮ: Pokud má slovo víc překladů/významů (oddělených čárkou, lomítkem, středníkem, slovem „nebo" apod.), NIKDY je nedávej do jednoho pole jako „nahrát, zaznamenat". Vytvoř SAMOSTATNÝ záznam pro KAŽDÝ význam – v poli "cs" i "foreign" smí být jen JEDEN význam (žádné čárky ani lomítka spojující významy). Příklad: „record = nahrát, zaznamenat" → DVA záznamy: {foreign:"record", cs:"nahrát"} a {foreign:"record", cs:"zaznamenat"}. Totéž když má víc variant cizí strana – každá dvojice je vlastní záznam. '
+      +'Slov, která NEJSOU v tomto importu (zdroj je nezmiňuje), se NEDOTÝKEJ – neměň jim box, due, sekce ani nic jiného. Nepřejmenovávej a neslučuj existující sekce. Neměň pole "settings". '
       +'KROK 5 (výstup): Vrať CELÝ upravený soubor jako JEDEN platný JSON (v bloku kódu, nic víc kolem). Pak uživateli řekni: 1) kolik slov jsi přidal a do jaké sekce, 2) ať si JSON ULOŽÍ jako soubor, 3) ať ho v aplikaci Slovíčka načte přes Sync (záložka Slovíčka → tlačítko Sync). ',
     _schema:{lang:'en | de | es | it | el', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo', sections:'pole názvů sekcí, např. ["Unit 5"] nebo [] '},
     _schema_sekce:{name:'název sekce', created:'čas vzniku v ms (u nové sekce zkopíruj now_ms)', lang:'jazyk sekce: en|de|es|it|el'},
@@ -1056,11 +1060,14 @@ function mergeWords(incoming){
     if(!map.has(k)){map.set(k,norm);added++;}
     else{
       const cur=map.get(k);
+      const before=(cur.sections||[]).length;
       const secs=unionSecs(cur.sections,norm.sections);
+      const grew=secs.length>before;
       if((norm.lastReviewed||0) > (cur.lastReviewed||0)){
         map.set(k,{...norm, id:cur.id, added:Math.min(cur.added||norm.added, norm.added||cur.added), sections:secs});
       }else{
         cur.sections=secs;
+        if(grew && norm.box===1){ cur.box=1; cur.due=Date.now(); } // re-import into a new section → back to Neumím
       }
     }
   });
