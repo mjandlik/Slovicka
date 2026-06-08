@@ -153,14 +153,11 @@
   .secedit .secchip{cursor:default;display:inline-flex;align-items:center;gap:6px;}
   .secedit .secchip button{background:none;border:none;color:inherit;font-size:15px;cursor:pointer;padding:0;line-height:1;}
   .secnone{color:var(--ink-faint);font-size:13px;}
-  .secaddrow{display:flex;gap:8px;}
-  .secaddrow input{flex:1;min-width:0;}
   .secmgr-head{font-size:13px;color:var(--ink-faint);margin:8px 0;}
   .secmgr-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;}
   .secmgr-row .nm{flex:1;min-width:0;color:var(--ink);}
   .secmgr-row .cnt{color:var(--ink-faint);font-size:13px;}
   .secmgr-row button{background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:4px;}
-  #statBoxes{margin-bottom:14px;}
   .btn.need{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
   .listcount{text-align:right;color:var(--ink-faint);font-size:12px;margin-bottom:8px;}
   .cardsecs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px;}
@@ -257,7 +254,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v66</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v67</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -285,7 +282,11 @@
 
   <!-- ============ WORD LIST ============ -->
   <section id="view-list" class="hidden">
-    <button class="btn ghost" id="listBackupBtn" style="margin:0 0 12px;" onclick="exportWords()">⬇ Záloha</button>
+    <div style="display:flex;gap:8px;margin:0 0 12px;">
+      <button class="btn ghost" id="listBackupBtn" style="margin:0;flex:1;" onclick="exportWords()">⬇ Záloha</button>
+      <button class="btn ghost" style="margin:0;flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
+      <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
+    </div>
     <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:8px;">
     <div id="listStavBar" class="secbar"></div>
     <div id="listSecBar" class="secbar hidden"></div>
@@ -334,11 +335,7 @@
         <input type="text" id="editCs">
         <label class="fld" style="margin-top:8px;">Sekce</label>
         <div id="editSecChips" class="secedit"></div>
-        <div class="secaddrow">
-          <input type="text" id="editSecInput" list="secDatalist" placeholder="přidat sekci…" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditSection();}">
-          <button type="button" class="btn ghost" style="margin:0;width:auto;padding:8px 12px;" onclick="addEditSection()">Přidat</button>
-        </div>
-        <datalist id="secDatalist"></datalist>
+        <select id="editSecAdd" onchange="onEditSecAdd()" style="width:100%;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:14px;font-family:inherit;"></select>
         <div style="display:flex;gap:8px;margin-top:12px;">
           <button class="btn ghost" style="margin:0;flex:1;" onclick="closeCardEdit()">Zrušit</button>
           <button class="btn" style="margin:0;flex:1;" onclick="saveCardEdit()">Uložit</button>
@@ -360,7 +357,6 @@
   <section id="view-stats" class="hidden">
     <div class="listhead"><h2>Statistika</h2></div>
     <div id="statEmpty" class="empty-note hidden">Zatím tu nic není.<br>Přidej si nějaká slovíčka.</div>
-    <div class="stats" id="statBoxes"></div>
     <div id="statNums" class="numgrid"></div>
     <div id="statCharts"></div>
     <div style="height:90px;"></div>
@@ -373,11 +369,6 @@
     <div id="settingsList"></div>
     <div id="weightInfo" class="weightinfo"></div>
     <button class="btn ghost" style="margin-top:6px;" onclick="resetSettings()">Obnovit výchozí hodnoty</button>
-
-    <div class="listhead" style="margin-top:24px;"><h2>Data</h2></div>
-    <p class="sub" style="margin:0 0 12px;color:var(--ink-faint);font-size:13px;">Načtení / sloučení slovíček ze zálohy nebo z AI importu.</p>
-    <button class="btn ghost" style="margin:0;" onclick="document.getElementById('syncFile').click()">🔄 Obnovit ze zálohy (Sync)</button>
-    <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
 
     <div class="listhead" style="margin-top:24px;"><h2>Sekce</h2></div>
     <div class="setrow">
@@ -395,7 +386,7 @@
   <section id="view-guide" class="hidden">
     <div class="listhead"><h2>Návod</h2></div>
     <div class="guide">
-      <div class="warn">⚠️ <b>Důležité – zálohuj!</b> Slovíčka jsou uložená jen v tomto prohlížeči. Když vymažeš historii / data prohlížeče (nebo appku odinstaluješ), <b>data se nenávratně ztratí</b>. Pravidelně dělej <b>Zálohu</b> (v záložce Slovíčka) a soubor si ulož mimo prohlížeč (Disk, Soubory). Zpět ho načteš přes <b>Sync</b> (v Nastavení → Data).</div>
+      <div class="warn">⚠️ <b>Důležité – zálohuj!</b> Slovíčka jsou uložená jen v tomto prohlížeči. Když vymažeš historii / data prohlížeče (nebo appku odinstaluješ), <b>data se nenávratně ztratí</b>. Pravidelně dělej <b>Zálohu</b> (v záložce Slovíčka) a soubor si ulož mimo prohlížeč (Disk, Soubory). Zpět ho načteš přes <b>Sync</b> (v záložce Slovíčka).</div>
       <h3>Co appka umí</h3>
       <p>Slovíčka je tvůj osobní trenér slovní zásoby pro pět jazyků: <b>angličtinu, němčinu, španělštinu, italštinu a řečtinu</b> (vždy ve dvojici s češtinou). Překládá, ukládá slovíčka, učí je metodou chytrého opakování a vede statistiku. Vše běží offline v prohlížeči, jen překlad a výslovnost potřebují internet.</p>
 
@@ -438,7 +429,7 @@
       </ul>
 
       <h3>Záloha a obnovení</h3>
-      <p>Data jsou jen v prohlížeči – <b>pravidelně dělej Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> (v Nastavení → Data) ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše. <b>Pozor:</b> vymazání dat/historie prohlížeče data v appce smaže – přežije jen tvůj zálohovaný soubor.</p>
+      <p>Data jsou jen v prohlížeči – <b>pravidelně dělej Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> (v záložce Slovíčka) ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše. <b>Pozor:</b> vymazání dat/historie prohlížeče data v appce smaže – přežije jen tvůj zálohovaný soubor.</p>
 
       <h3>Import slovíček přes AI (z fotky i textu)</h3>
       <p>Zálohový soubor obsahuje skryté instrukce pro AI. Můžeš tak nechat slovíčka doplnit umělou inteligencí:</p>
@@ -446,7 +437,7 @@
         <li>Přepni se v appce na jazyk, který se učíš, a dej <b>Záloha</b>.</li>
         <li>V chatu s AI (např. ChatGPT, Claude, Gemini) <b>nahraj tento soubor</b> a k němu buď <b>fotku</b> slovníku/seznamu, nebo <b>nakopíruj text</b>.</li>
         <li>Napiš třeba: „Přidej do souboru slovíčka z téhle fotky" nebo „...z tohoto textu". AI podle instrukcí v souboru najde slovíčka, přeskočí ta, co už v souboru jsou, a přidá nová jako „Neumím".</li>
-        <li>Upravený soubor ti AI vrátí – ten pak v appce načteš přes <b>Sync</b> (Nastavení → Data).</li>
+        <li>Upravený soubor ti AI vrátí – ten pak v appce načteš přes <b>Sync</b> (v záložce Slovíčka).</li>
       </ul>
       <p>Z textu AI vybere všechna slova, která v souboru ještě nejsou. Existující slovíčka ani jejich pokrok nemění. Pokud nepozná jazyk, zeptá se.</p>
 
@@ -569,7 +560,7 @@ function updateBackupBanner(){
   const backup=+(localStorage.getItem(KEY+'_backup')||0);
   const need=(words.length>0 || sectionsReg.length>0) && changed>backup;
   const btn=document.getElementById('listBackupBtn');
-  if(btn){ btn.classList.toggle('need',need); btn.textContent = need ? '⬇ Záloha – máš neuložené změny' : '⬇ Záloha'; }
+  if(btn){ btn.classList.toggle('need',need); btn.textContent = need ? '⬇ Záloha •' : '⬇ Záloha'; }
 }
 function markChanged(){ try{localStorage.setItem(KEY+'_changed',String(Date.now()));}catch(e){} updateBackupBanner(); }
 
@@ -642,7 +633,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v66';
+const APP_VER='v67';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -924,13 +915,23 @@ function renderEditSecChips(){
   el.innerHTML = editSections.length
     ? editSections.map(n=>'<span class="secchip on">'+esc(n)+'<button type="button" data-n="'+esc(n)+'" onclick="removeEditSection(this.dataset.n)">×</button></span>').join('')
     : '<span class="secnone">žádná</span>';
-  const dl=document.getElementById('secDatalist');
-  if(dl) dl.innerHTML=sectionsForLang(currentCard?currentCard.lang:activeLang,true).map(s=>'<option value="'+esc(s.name)+'">').join('');
+  const sel=document.getElementById('editSecAdd');
+  if(sel){
+    const lang=currentCard?currentCard.lang:activeLang;
+    const avail=sectionsForLang(lang,true).filter(s=>!editSections.some(e=>e.toLowerCase()===s.name.toLowerCase()));
+    let html='<option value="">+ přidat sekci…</option>';
+    avail.forEach(s=>{ html+='<option value="'+esc(s.name)+'">'+esc(s.name)+'</option>'; });
+    html+='<option value="__new__">➕ nová sekce…</option>';
+    sel.innerHTML=html;
+  }
 }
-function addEditSection(){
-  const inp=document.getElementById('editSecInput'); const name=(inp.value||'').trim(); if(!name)return;
-  if(!editSections.some(s=>s.toLowerCase()===name.toLowerCase())) editSections.push(name);
-  inp.value=''; renderEditSecChips();
+function onEditSecAdd(){
+  const sel=document.getElementById('editSecAdd'); if(!sel)return;
+  let name=sel.value;
+  if(name==='__new__'){ name=(prompt('Název nové sekce:')||'').trim(); }
+  name=(name||'').trim();
+  if(name && !editSections.some(s=>s.toLowerCase()===name.toLowerCase())) editSections.push(name);
+  renderEditSecChips();
 }
 function removeEditSection(name){ editSections=editSections.filter(s=>s.toLowerCase()!==String(name).toLowerCase()); renderEditSecChips(); }
 function openCardEdit(){
@@ -1359,22 +1360,15 @@ function renderStats(){
   document.getElementById('statEmpty').classList.toggle('hidden',!empty);
   document.getElementById('statNums').classList.toggle('hidden',empty);
   document.getElementById('statCharts').classList.toggle('hidden',empty);
-  const sb=document.getElementById('statBoxes');
-  sb.classList.toggle('hidden',empty);
-  if(empty){document.getElementById('statNums').innerHTML='';document.getElementById('statCharts').innerHTML='';sb.innerHTML='';return;}
+  if(empty){document.getElementById('statNums').innerHTML='';document.getElementById('statCharts').innerHTML='';return;}
   const cc={1:0,2:0,3:0,4:0};d.forEach(w=>cc[w.box]=(cc[w.box]||0)+1);
-  sb.innerHTML=
-    '<div class="stat s-learn"><b>'+cc[1]+'</b><small>Neumím</small></div>'+
-    '<div class="stat s-almost"><b>'+cc[2]+'</b><small>Trochu umím</small></div>'+
-    '<div class="stat s-known"><b>'+cc[3]+'</b><small>Umím</small></div>'+
-    '<div class="stat s-done"><b>'+cc[4]+'</b><small>Naučeno</small></div>';
   const wkNow=weekStart(Date.now());
-  const addedThisWeek=d.filter(w=>weekStart(w.added||Date.now())===wkNow).length;
   document.getElementById('statNums').innerHTML=
-    '<div class="numcard"><b>'+total+'</b><span>slovíček celkem</span></div>'+
-    '<div class="numcard"><b style="color:var(--c-known)">'+known+'</b><span>umím <small>('+pct+' %)</small></span></div>'+
-    '<div class="numcard"><b style="color:var(--c-learn)">'+learning+'</b><span>Neumím</span></div>'+
-    '<div class="numcard"><b style="color:var(--accent)">'+addedThisWeek+'</b><span>nově tento týden</span></div>';
+    '<div class="numcard"><b style="color:var(--c-learn)">'+cc[1]+'</b><span>Neumím</span></div>'+
+    '<div class="numcard"><b style="color:var(--c-almost)">'+cc[2]+'</b><span>Trochu umím</span></div>'+
+    '<div class="numcard"><b style="color:var(--c-known)">'+cc[3]+'</b><span>Umím</span></div>'+
+    '<div class="numcard"><b style="color:var(--c-done)">'+cc[4]+'</b><span>Naučeno</span></div>'+
+    '<div class="numcard"><b>'+total+'</b><span>celkem</span></div>';
   const addedTs=d.map(w=>w.added||Date.now());
   const minTs=Math.min.apply(null,addedTs), maxTs=Date.now();
   const weeks=weekList(minTs,maxTs);
