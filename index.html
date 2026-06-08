@@ -254,7 +254,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v67</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v68</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -633,7 +633,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v67';
+const APP_VER='v68';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -906,6 +906,8 @@ function openWordInCards(id){
   document.getElementById('learnDone').classList.add('hidden');
   document.getElementById('cardEditPanel').classList.add('hidden');
   document.getElementById('learnArea').classList.remove('hidden');
+  document.body.classList.remove('list-locked');
+  document.body.classList.add('learn-locked');
   renderSecBar('learnSecBar',learnSectionSel,'learn');
   currentCard=w;showCard();
 }
@@ -941,9 +943,14 @@ function openCardEdit(){
   document.getElementById('editCs').value=w.cs;
   editSections=[...(w.sections||[])]; renderEditSecChips();
   document.getElementById('cardEditPanel').classList.remove('hidden');
+  document.body.classList.remove('learn-locked','list-locked'); // allow scrolling to reach all fields + buttons
   updateLearnBar();
 }
-function closeCardEdit(){document.getElementById('cardEditPanel').classList.add('hidden');updateLearnBar();}
+function closeCardEdit(){
+  document.getElementById('cardEditPanel').classList.add('hidden');
+  if(!document.getElementById('view-learn').classList.contains('hidden')) document.body.classList.add('learn-locked');
+  updateLearnBar();
+}
 function saveCardEdit(){
   const w=currentCard;if(!w)return;
   const fw=document.getElementById('editEn').value.trim();
