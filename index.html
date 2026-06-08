@@ -48,6 +48,7 @@
   body.learn-locked .wrap{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0;}
   body.learn-locked #view-learn{flex:1;min-height:0;display:flex;flex-direction:column;}
   body.learn-locked #learnArea{flex:1;min-height:0;display:flex;flex-direction:column;}
+  body.learn-locked #view-learn > :not(#learnArea){flex:0 0 auto;}
   body.learn-locked #learnArea > :not(#exampleBox){flex:0 0 auto;}
   body.learn-locked #exampleBox{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--learnbar-h,140px) + 74px + env(safe-area-inset-bottom));}
   body.learn-locked #learnSpacer{display:none;}
@@ -141,6 +142,23 @@
   .item .pron-mini{font-size:12px;font-weight:400;color:#d8cbb6;}
   .item .stopbtn{color:var(--ink-faint);font-size:18px;}
   .item .stopbtn.active{color:#e0573f;}
+  .secbar{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none;}
+  .secbar::-webkit-scrollbar{display:none;}
+  .secchip{flex:0 0 auto;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap;}
+  .secchip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  .savesecrow{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:var(--ink-soft);}
+  .savesecrow select{flex:1;min-width:0;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;font-family:inherit;}
+  .secedit{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .secedit .secchip{cursor:default;display:inline-flex;align-items:center;gap:6px;}
+  .secedit .secchip button{background:none;border:none;color:inherit;font-size:15px;cursor:pointer;padding:0;line-height:1;}
+  .secnone{color:var(--ink-faint);font-size:13px;}
+  .secaddrow{display:flex;gap:8px;}
+  .secaddrow input{flex:1;min-width:0;}
+  .secmgr-head{font-size:13px;color:var(--ink-faint);margin:8px 0;}
+  .secmgr-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;}
+  .secmgr-row .nm{flex:1;min-width:0;color:var(--ink);}
+  .secmgr-row .cnt{color:var(--ink-faint);font-size:13px;}
+  .secmgr-row button{background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:4px;}
   .item .cs{font-size:14px;color:var(--ink-soft);}
   .item .del{background:transparent;border:none;color:var(--ink-faint);font-size:19px;cursor:pointer;padding:4px 6px;}
   .empty-note{text-align:center;color:var(--ink-faint);padding:40px 10px;font-size:15px;line-height:1.5;}
@@ -233,7 +251,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v63</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v64</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -249,6 +267,10 @@
       </div>
       <textarea id="src" placeholder="napiš slovíčko nebo frázi…"></textarea>
       <button class="btn" id="goBtn" onclick="translateNow()">Překlad</button>
+      <div id="saveSecRow" class="savesecrow">
+        <span>Ukládat do sekce:</span>
+        <select id="saveSecSel" onchange="onSaveSecChange()"></select>
+      </div>
       <div class="result">
         <div id="opts"></div>
       </div>
@@ -281,11 +303,13 @@
       <button id="llCs" onclick="setListLang('cs')">Česky</button>
     </div>
     <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:10px;">
+    <div id="listSecBar" class="secbar hidden"></div>
     <div id="wordList"></div>
   </section>
 
   <!-- ============ LEARNING ============ -->
   <section id="view-learn" class="hidden">
+    <div id="learnSecBar" class="secbar hidden" style="margin-bottom:12px;"></div>
     <div id="learnEmpty" class="empty-note hidden">
       Zatím nemáš co se učit.<br>Přidej si slovíčka v překladači.
     </div>
@@ -317,6 +341,13 @@
         <input type="text" id="editPron" placeholder="nepovinné">
         <label class="fld" style="margin-top:8px;">Česky</label>
         <input type="text" id="editCs">
+        <label class="fld" style="margin-top:8px;">Sekce</label>
+        <div id="editSecChips" class="secedit"></div>
+        <div class="secaddrow">
+          <input type="text" id="editSecInput" list="secDatalist" placeholder="přidat sekci…" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditSection();}">
+          <button type="button" class="btn ghost" style="margin:0;width:auto;padding:8px 12px;" onclick="addEditSection()">Přidat</button>
+        </div>
+        <datalist id="secDatalist"></datalist>
         <div style="display:flex;gap:8px;margin-top:12px;">
           <button class="btn ghost" style="margin:0;flex:1;" onclick="closeCardEdit()">Zrušit</button>
           <button class="btn" style="margin:0;flex:1;" onclick="saveCardEdit()">Uložit</button>
@@ -350,6 +381,16 @@
     <div id="settingsList"></div>
     <div id="weightInfo" class="weightinfo"></div>
     <button class="btn ghost" style="margin-top:6px;" onclick="resetSettings()">Obnovit výchozí hodnoty</button>
+
+    <div class="listhead" style="margin-top:24px;"><h2>Sekce</h2></div>
+    <div class="setrow">
+      <div class="info"><div class="lbl">Řazení sekcí</div><div class="dsc">Jak se řadí sekce ve filtrech, výběru a zde</div></div>
+      <div style="display:flex;gap:6px;flex:0 0 auto;">
+        <button class="secchip" id="secSortAlpha" onclick="setSectionSort('alpha')">Abecedně</button>
+        <button class="secchip" id="secSortCreated" onclick="setSectionSort('created')">Dle data</button>
+      </div>
+    </div>
+    <div id="sectionMgr"></div>
     <div style="height:90px;"></div>
   </section>
 
@@ -388,6 +429,16 @@
 
       <h3>Statistika a Nastavení</h3>
       <p>Statistika ukazuje počty a vývoj v čase pro aktuální jazyk. V Nastavení vyladíš chování učení (jak rychle se vrací neznámá slova, jak často se míchají kategorie).</p>
+
+      <h3>Sekce</h3>
+      <p>Slovíčko může patřit do jedné i více <b>sekcí</b> (např. „Unit 5", „Slovesa"). Sekce mají datum vzniku a ukládají se do zálohy.</p>
+      <ul>
+        <li><b>Filtrování:</b> v záložce Slovíčka i v Učení je nahoře lišta sekcí. Ťuknutím vybereš jednu nebo víc sekcí (zobrazí/učí se slovíčka z kterékoli vybrané), „Vše" výběr zruší, „Bez sekce" ukáže neoznačená.</li>
+        <li><b>Učení podle sekce:</b> vyber sekci v Učení a procvičuješ jen ji – ideální na konkrétní lekci.</li>
+        <li><b>Přiřazení:</b> na kartičce přes tužku <b>✎</b> (přidat/odebrat sekce), nebo v Překladači přes „Ukládat do sekce" (uložené slovo rovnou dostane sekci).</li>
+        <li><b>Správa:</b> v Nastavení můžeš sekce přejmenovat, smazat (slovíčka zůstanou) i zvolit jejich řazení (abecedně / podle data vzniku).</li>
+        <li><b>Přes AI:</b> spolu s fotkou řekni „založ novou sekci Unit 5" nebo „přidej do sekce Unit 5"; můžeš si taky nechat vypsat existující sekce. Po Sync pak v Učení vybereš danou sekci.</li>
+      </ul>
 
       <h3>Záloha a obnovení</h3>
       <p>Data jsou jen v prohlížeči – <b>pravidelně dělej Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše. <b>Pozor:</b> vymazání dat/historie prohlížeče data v appce smaže – přežije jen tvůj zálohovaný soubor.</p>
@@ -472,9 +523,50 @@ function migrateWord(w){
   if('en' in w) delete w.en;
   if(w.pron==null) w.pron='';
   if('hidden' in w){ if(w.hidden===true) w.box=4; delete w.hidden; } // unified into "naučeno"
+  if(!Array.isArray(w.sections)) w.sections=[];
   return w;
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();}
+
+/* ---------- Sections ---------- */
+const NO_SECTION='\u0000none';   // sentinel for "Bez sekce"
+let sectionsReg=[];              // [{name, created, lang}]
+function loadSections(){ try{ const a=JSON.parse(localStorage.getItem(KEY+'_sections')||'[]'); return Array.isArray(a)?a.filter(s=>s&&s.name).map(s=>({name:String(s.name),created:toMs(s.created),lang:(s.lang&&LANGS[s.lang])?s.lang:'en'})):[]; }catch(e){ return []; } }
+function saveSections(){ try{ localStorage.setItem(KEY+'_sections',JSON.stringify(sectionsReg)); }catch(e){} }
+function findSection(lang,name){ const n=String(name||'').trim().toLowerCase(); return sectionsReg.find(s=>s.lang===lang && s.name.toLowerCase()===n)||null; }
+function ensureSection(lang,name,created){ name=String(name||'').trim(); if(!name)return ''; const ex=findSection(lang,name); if(ex)return ex.name; sectionsReg.push({name,created:toMs(created||Date.now()),lang}); saveSections(); return name; }
+function healSections(){ let touched=false; words.forEach(w=>{ if(!Array.isArray(w.sections))w.sections=[]; w.sections.forEach(n=>{ if(!findSection(w.lang,n)){ sectionsReg.push({name:String(n),created:toMs(w.added||Date.now()),lang:w.lang}); touched=true; } }); }); if(touched)saveSections(); }
+function sectionCount(lang,name){ const n=String(name).toLowerCase(); return words.filter(w=>w.lang===lang && (w.sections||[]).some(s=>String(s).toLowerCase()===n)).length; }
+function sectionsForLang(lang,includeEmpty){
+  let list=sectionsReg.filter(s=>s.lang===lang);
+  if(!includeEmpty) list=list.filter(s=>sectionCount(lang,s.name)>0);
+  const mode=settings.sectionSort||'alpha';
+  if(mode==='created') list.sort((a,b)=>(a.created||0)-(b.created||0));
+  else { const coll=new Intl.Collator('cs',{sensitivity:'base'}); list.sort((a,b)=>coll.compare(a.name,b.name)); }
+  return list;
+}
+function wordHasSection(w,name){ if(name===NO_SECTION) return !(w.sections&&w.sections.length); const n=String(name).toLowerCase(); return (w.sections||[]).some(s=>String(s).toLowerCase()===n); }
+function passesSectionFilter(w,sel){ if(!sel||!sel.size)return true; for(const n of sel){ if(wordHasSection(w,n))return true; } return false; }
+// selection state (per active language, persisted)
+let listSectionSel=new Set(), learnSectionSel=new Set();
+let secSel={list:{},learn:{}};
+function loadSecSel(){ try{ const o=JSON.parse(localStorage.getItem(KEY+'_secsel')||'{}'); secSel={list:o.list||{},learn:o.learn||{}}; }catch(e){ secSel={list:{},learn:{}}; } }
+function saveSecSel(){ secSel.list[activeLang]=[...listSectionSel]; secSel.learn[activeLang]=[...learnSectionSel]; try{localStorage.setItem(KEY+'_secsel',JSON.stringify(secSel));}catch(e){} }
+function loadSecSelForLang(){ listSectionSel=new Set(secSel.list[activeLang]||[]); learnSectionSel=new Set(secSel.learn[activeLang]||[]); }
+function renderSecBar(elId,sel,kind){
+  const el=document.getElementById(elId); if(!el)return;
+  const secs=sectionsForLang(activeLang,false);
+  const hasNoSec=words.some(w=>w.lang===activeLang && !(w.sections&&w.sections.length));
+  if(!secs.length){ el.classList.add('hidden'); el.innerHTML=''; return; }
+  el.classList.remove('hidden');
+  let html='<button class="secchip'+(sel.size===0?' on':'')+'" onclick="clearSecSel(\''+kind+'\')">Vše</button>';
+  secs.forEach(s=>{ const a=sel.has(s.name)?' on':''; html+='<button class="secchip'+a+'" onclick="toggleSecChip(\''+kind+'\',this.dataset.n)" data-n="'+esc(s.name)+'">'+esc(s.name)+'</button>'; });
+  if(hasNoSec){ const a=sel.has(NO_SECTION)?' on':''; html+='<button class="secchip'+a+'" onclick="toggleSecChip(\''+kind+'\',\''+NO_SECTION+'\')">Bez sekce</button>'; }
+  el.innerHTML=html;
+}
+function clearSecSel(kind){ (kind==='list'?listSectionSel:learnSectionSel).clear(); saveSecSel(); afterSecChange(kind); }
+function toggleSecChip(kind,name){ const sel=kind==='list'?listSectionSel:learnSectionSel; if(sel.has(name))sel.delete(name); else sel.add(name); saveSecSel(); afterSecChange(kind); }
+function afterSecChange(kind){ if(kind==='list')renderList(); else startLearn(sessionAll); }
 function updateBackupBanner(){
   const b=document.getElementById('backupBanner');if(!b)return;
   const changed=+(localStorage.getItem(KEY+'_changed')||0);
@@ -519,8 +611,12 @@ function setActiveLang(l){
   let carry='';
   if(current) carry = current.from==='cs' ? current.source : ((current.options&&current.options[0])?current.options[0].word:'');
   const onTranslate=!document.getElementById('view-translate').classList.contains('hidden');
+  saveSecSel();                 // persist current language's section selections
   activeLang=l;saveLang();
+  loadSecSelForLang();          // load new language's selections
+  currentSaveSection='';
   renderLangbar();
+  populateSaveSecSel();
   current=null;
   if(onTranslate && carry){
     setDir('cs',activeLang);                       // translate Czech → new language
@@ -536,6 +632,7 @@ function setActiveLang(l){
   if(!document.getElementById('view-list').classList.contains('hidden'))renderList();
   if(!document.getElementById('view-stats').classList.contains('hidden'))renderStats();
   if(!document.getElementById('view-learn').classList.contains('hidden'))startLearn();
+  if(!document.getElementById('view-settings').classList.contains('hidden')){updateSectionSortUI();renderSectionMgr();}
 }
 function refreshLabels(){
   const L=LANGS[activeLang];
@@ -546,7 +643,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v63';
+const APP_VER='v64';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -701,17 +798,19 @@ function retranslate(i){
 }
 // Add a {lang, cs, foreign, pron} entry into its deck. Dedup = same lang+cs+foreign.
 // Different meanings (other foreign for same cs) are NOT duplicates → they get saved.
-function addEntry(lang,cs,foreign,pos,pron){
+function addEntry(lang,cs,foreign,pos,pron,section){
   cs=(cs||'').trim();foreign=(foreign||'').trim();
   if(!cs||!foreign)return 'empty';
+  const secName=section?ensureSection(lang,section):'';
   const ex=words.find(w=>w.lang===lang && w.foreign.toLowerCase()===foreign.toLowerCase() && w.cs.toLowerCase()===cs.toLowerCase());
   if(ex){
     ex.box=1; ex.due=Date.now();           // already saved → put it back to "Neumím"
+    if(secName){ if(!Array.isArray(ex.sections))ex.sections=[]; if(!ex.sections.some(s=>String(s).toLowerCase()===secName.toLowerCase())) ex.sections.push(secName); }
     save();
     if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
     return 'reset';
   }
-  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null});
+  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null,sections:secName?[secName]:[]});
   save();
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
   return 'ok';
@@ -728,18 +827,38 @@ async function savePair(i){
   for(const L of targets){
     if(optSaved[i].has(L))continue;
     if(L===activeLang){
-      const r=addEntry(activeLang,cs,foreign,opt.pos||'',pron);
+      const r=addEntry(activeLang,cs,foreign,opt.pos||'',pron,currentSaveSection);
       if(r==='ok'||r==='dup'||r==='reset') optSaved[i].add(L);
     }else{
       try{
         const res=await smartTranslate(cs,'cs',LANGS[L].gt);
         const fw=(res.text||'').trim();
-        if(fw){ const rr=addEntry(L,cs,fw,'',res.pron||''); if(rr==='ok'||rr==='dup'||rr==='reset') optSaved[i].add(L); }
+        if(fw){ const rr=addEntry(L,cs,fw,'',res.pron||'',currentSaveSection); if(rr==='ok'||rr==='dup'||rr==='reset') optSaved[i].add(L); }
       }catch(e){/* network */}
     }
   }
   renderLangSquares(i);
   toast('Uloženo: '+([...optSaved[i]].map(l=>LANGS[l].short).join(' · ')||'—'));
+}
+let currentSaveSection='';
+function populateSaveSecSel(){
+  const sel=document.getElementById('saveSecSel'); if(!sel)return;
+  const secs=sectionsForLang(activeLang,true);
+  if(currentSaveSection && !findSection(activeLang,currentSaveSection)) currentSaveSection='';
+  let html='<option value="">— bez sekce —</option>';
+  secs.forEach(s=>{ html+='<option value="'+esc(s.name)+'"'+(currentSaveSection&&currentSaveSection.toLowerCase()===s.name.toLowerCase()?' selected':'')+'>'+esc(s.name)+'</option>'; });
+  html+='<option value="__new__">➕ Nová sekce…</option>';
+  sel.innerHTML=html;
+}
+function onSaveSecChange(){
+  const sel=document.getElementById('saveSecSel'); if(!sel)return;
+  if(sel.value==='__new__'){
+    const name=(prompt('Název nové sekce:')||'').trim();
+    if(name){ currentSaveSection=ensureSection(activeLang,name); } 
+    populateSaveSecSel();
+    return;
+  }
+  currentSaveSection=sel.value;
 }
 
 /* ---------- Word list ---------- */
@@ -756,15 +875,16 @@ function renderList(){
   document.getElementById('stAlmost').textContent=c[2];
   document.getElementById('stKnown').textContent=c[3];
   document.getElementById('stDone').textContent=c[4];
-  document.getElementById('totalCount').textContent=d.length;
   [1,2,3,4].forEach(b=>{const el=document.getElementById('stat'+b);if(el)el.classList.toggle('on',!!boxFilter[b]);});
+  renderSecBar('listSecBar',listSectionSel,'list');
   const list=document.getElementById('wordList');
-  if(!d.length){list.innerHTML='<div class="empty-note">Žádná slovíčka v jazyce '+LANGS[activeLang].name+'.<br>Přelož něco a ulož si to.</div>';return;}
+  if(!d.length){document.getElementById('totalCount').textContent=0;list.innerHTML='<div class="empty-note">Žádná slovíčka v jazyce '+LANGS[activeLang].name+'.<br>Přelož něco a ulož si to.</div>';return;}
   const qEl=document.getElementById('listSearch');
   const q=qEl?stripDia(qEl.value):'';
   const coll=new Intl.Collator('cs',{sensitivity:'base'});
-  const shown=d.filter(w=>boxFilter[w.box] && (!q || stripDia(w.foreign).includes(q)||stripDia(w.cs).includes(q)))
+  const shown=d.filter(w=>boxFilter[w.box] && passesSectionFilter(w,listSectionSel) && (!q || stripDia(w.foreign).includes(q)||stripDia(w.cs).includes(q)))
     .sort((a,b)=>coll.compare(listLang==='fw'?a.foreign:a.cs, listLang==='fw'?b.foreign:b.cs));
+  document.getElementById('totalCount').textContent=shown.length;
   if(!shown.length){list.innerHTML='<div class="empty-note">Nic nenalezeno.</div>';return;}
   list.innerHTML=shown.map(w=>{
     const posTag=w.pos?' <span class="opt-pos">'+esc(posLabel(w.pos))+'</span>':'';
@@ -796,13 +916,30 @@ function openWordInCards(id){
   document.getElementById('learnDone').classList.add('hidden');
   document.getElementById('cardEditPanel').classList.add('hidden');
   document.getElementById('learnArea').classList.remove('hidden');
+  renderSecBar('learnSecBar',learnSectionSel,'learn');
   currentCard=w;showCard();
 }
+let editSections=[];
+function renderEditSecChips(){
+  const el=document.getElementById('editSecChips'); if(!el)return;
+  el.innerHTML = editSections.length
+    ? editSections.map(n=>'<span class="secchip on">'+esc(n)+'<button type="button" data-n="'+esc(n)+'" onclick="removeEditSection(this.dataset.n)">×</button></span>').join('')
+    : '<span class="secnone">žádná</span>';
+  const dl=document.getElementById('secDatalist');
+  if(dl) dl.innerHTML=sectionsForLang(currentCard?currentCard.lang:activeLang,true).map(s=>'<option value="'+esc(s.name)+'">').join('');
+}
+function addEditSection(){
+  const inp=document.getElementById('editSecInput'); const name=(inp.value||'').trim(); if(!name)return;
+  if(!editSections.some(s=>s.toLowerCase()===name.toLowerCase())) editSections.push(name);
+  inp.value=''; renderEditSecChips();
+}
+function removeEditSection(name){ editSections=editSections.filter(s=>s.toLowerCase()!==String(name).toLowerCase()); renderEditSecChips(); }
 function openCardEdit(){
   const w=currentCard;if(!w)return;
   document.getElementById('editEn').value=w.foreign;
   document.getElementById('editPron').value=w.pron||'';
   document.getElementById('editCs').value=w.cs;
+  editSections=[...(w.sections||[])]; renderEditSecChips();
   document.getElementById('cardEditPanel').classList.remove('hidden');
   updateLearnBar();
 }
@@ -813,9 +950,10 @@ function saveCardEdit(){
   const cs=document.getElementById('editCs').value.trim();
   const pron=document.getElementById('editPron').value.trim();
   if(!fw||!cs){toast('Vyplň slovo i překlad');return;}
+  editSections.forEach(n=>ensureSection(w.lang,n));
   const real=words.find(x=>x.id===w.id)||w;
-  real.foreign=fw;real.cs=cs;real.pron=pron;
-  w.foreign=fw;w.cs=cs;w.pron=pron;
+  real.foreign=fw;real.cs=cs;real.pron=pron;real.sections=[...editSections];
+  w.foreign=fw;w.cs=cs;w.pron=pron;w.sections=[...editSections];
   save();renderList();showCard();closeCardEdit();
   toast('Upraveno ✓');
 }
@@ -840,12 +978,15 @@ async function exportWords(){
       +'4) Každé nové slovíčko = objekt podle "_schema". box dej vždy 1 (Neumím), lastReviewed null, do "added" i "due" zkopíruj číslo z "now_ms", "id" dej unikátní (např. now_ms + pořadové číslo). "pron" a "pos" nech "" pokud je neznáš. '
       +'5) DUPLICITY: NEPŘIDÁVEJ slovíčko, které už v "words" je. Za duplicitu se považuje POUZE shoda v OBOU významech zároveň – tj. stejná kombinace lang + cs + foreign (porovnávej bez ohledu na velikost písmen). Když se shoduje jen jedna strana (stejné české slovo, ale jiný cizí překlad, nebo naopak), jde o JINÝ význam a ten PŘIDEJ jako nový záznam. Před přidáním projdi celé pole "words" a ověř, že tam tato trojice ještě není. '
       +'6) NEMĚŇ stávající slovíčka – obzvlášť neměň jejich "box" (stav učení), "lastReviewed" ani nic dalšího. Existující slovíčka mohou mít box 1–4; box 4 znamená "umím, už nenabízet" (uživatel je zná) – taková slova NECH BÝT a nepřidávej je znovu. '
-      +'7) Neměň pole "settings". Vrať CELÝ upravený soubor jako platný JSON.',
-    _schema:{lang:'en | de | es | it | el', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo'},
+      +'7) SEKCE: každé slovíčko má pole "sections" (pole názvů sekcí, klidně víc). Uživatel ti spolu se zdrojem řekne, co se sekcí: (a) „založ novou sekci X" → přidej do horního pole "sections" nový objekt {name:"X", created: now_ms, lang: stejný jako u slov} a VŠEM novým slovům z této dávky dej do "sections" ["X"]; (b) „přidej do existující sekce Y" → použij PŘESNĚ stejný název Y, který už v "sections" je (nezakládej duplikát), a dej ho novým slovům do "sections"; (c) když uživatel řekne „vypiš sekce", vypiš mu názvy z pole "sections" (pro daný jazyk), ať si vybere. Nepřejmenovávej a neslučuj existující sekce. U už existujících slov sekce neměň. '
+      +'8) Neměň pole "settings". Vrať CELÝ upravený soubor jako platný JSON.',
+    _schema:{lang:'en | de | es | it | el', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo', sections:'pole názvů sekcí, např. ["Unit 5"] nebo [] '},
+    _schema_sekce:{name:'název sekce', created:'čas vzniku v ms (u nové sekce zkopíruj now_ms)', lang:'jazyk sekce: en|de|es|it|el'},
     now_ms:Date.now(),
     defaultLang:activeLang,
-    app:'Slovíčka', version:7, savedAt:new Date().toISOString(),
+    app:'Slovíčka', version:8, savedAt:new Date().toISOString(),
     settings:settings,
+    sections:sectionsReg,
     words:words
   };
   const json=JSON.stringify(payload,null,2);
@@ -897,14 +1038,19 @@ function mergeWords(incoming){
       added:toMs(it.added),
       due:toMs(it.due),
       pos:it.pos||'',
-      lastReviewed:it.lastReviewed||null
+      lastReviewed:it.lastReviewed||null,
+      sections:Array.isArray(it.sections)?it.sections.map(String):[]
     };
+    const unionSecs=(a,b)=>{const out=[...(a||[])];(b||[]).forEach(n=>{if(!out.some(x=>String(x).toLowerCase()===String(n).toLowerCase()))out.push(n);});return out;};
     const k=keyOf(norm);
     if(!map.has(k)){map.set(k,norm);added++;}
     else{
       const cur=map.get(k);
+      const secs=unionSecs(cur.sections,norm.sections);
       if((norm.lastReviewed||0) > (cur.lastReviewed||0)){
-        map.set(k,{...norm, id:cur.id, added:Math.min(cur.added||norm.added, norm.added||cur.added)});
+        map.set(k,{...norm, id:cur.id, added:Math.min(cur.added||norm.added, norm.added||cur.added), sections:secs});
+      }else{
+        cur.sections=secs;
       }
     }
   });
@@ -921,6 +1067,7 @@ function applyIncomingSettings(s){
       settings[d.key]=v; changed=true;
     }
   });
+  if(s.sectionSort==='alpha'||s.sectionSort==='created'){ if(settings.sectionSort!==s.sectionSort){settings.sectionSort=s.sectionSort;changed=true;} }
   if(changed){ saveSettings(); if(!document.getElementById('view-settings').classList.contains('hidden')) renderSettings(); }
   return changed;
 }
@@ -937,6 +1084,10 @@ function syncWords(ev){
       else if(data && Array.isArray(data.words)){ arr=data.words; incomingSettings=data.settings||null; } // new format
       else throw new Error('bad');
       const added=mergeWords(arr);
+      if(data && Array.isArray(data.sections)){
+        data.sections.forEach(s=>{ if(s&&s.name){ const lang=(s.lang&&LANGS[s.lang])?s.lang:'en'; const ex=findSection(lang,s.name); if(!ex) sectionsReg.push({name:String(s.name),created:toMs(s.created),lang}); else ex.created=Math.min(ex.created||toMs(s.created),toMs(s.created)); } });
+      }
+      healSections(); saveSections();
       const setApplied = incomingSettings ? applyIncomingSettings(incomingSettings) : false;
       save();renderList(); // marks changes pending → banner will prompt for Záloha
       toast('Sloučeno: +'+added+' nových, celkem '+words.length+(setApplied?' • nastavení načteno':'')+'. Dej Zálohu.');
@@ -953,7 +1104,7 @@ const INTERVAL_DAYS={1:1,2:3,3:7};
 const DAY_MS=86400000;
 // Session tuning
 // Adjustable learning parameters (editable in Nastavení)
-const SETTINGS_DEFAULTS={gapNeumim:3,gapSkoro:8,maxHard:2,wLearn:4,wAlmost:3,wKnown:2};
+const SETTINGS_DEFAULTS={gapNeumim:3,gapSkoro:8,maxHard:2,wLearn:4,wAlmost:3,wKnown:2,sectionSort:'alpha'};
 const SETTING_DEFS=[
   {key:'gapNeumim',label:'Návrat „Neumím"',desc:'Za kolik kartiček se znovu objeví slovíčko, které neumíš',min:1,max:15},
   {key:'gapSkoro',label:'Návrat „Trochu umím"',desc:'Za kolik kartiček se znovu objeví slovíčko ohodnocené „Trochu umím"',min:2,max:30},
@@ -990,7 +1141,7 @@ function setLearnDir(d){
   document.getElementById('ldB').classList.toggle('on',d==='cs');
   if(currentCard) showCard(); // restart currentCard card from its front side
 }
-function sessionPool(){return words.filter(w=> w.lang===activeLang && (sessionAll ? true : w.box!==4));}
+function sessionPool(){return words.filter(w=> w.lang===activeLang && (sessionAll ? true : w.box!==4) && passesSectionFilter(w,learnSectionSel));}
 function weightedPick(cands){
   if(!cands.length)return null;
   const now=Date.now();
@@ -1036,6 +1187,7 @@ function nextCard(){
 function startLearn(forceAll){
   sessionAll=!!forceAll;
   reviewedThisSession=0;hardStreak=0;queue=[];currentCard=null;flipped=false;
+  renderSecBar('learnSecBar',learnSectionSel,'learn');
   const noWords=words.length===0;
   const poolEmpty=sessionPool().length===0;
   document.getElementById('learnEmpty').classList.toggle('hidden', !noWords);
@@ -1253,6 +1405,52 @@ function renderSettings(){
       '</div>'+
     '</div>').join('');
   updateWeightInfo();
+  updateSectionSortUI();
+  renderSectionMgr();
+}
+function updateSectionSortUI(){
+  const a=document.getElementById('secSortAlpha'),c=document.getElementById('secSortCreated');
+  const m=settings.sectionSort||'alpha';
+  if(a)a.classList.toggle('on',m==='alpha');
+  if(c)c.classList.toggle('on',m==='created');
+}
+function setSectionSort(v){ settings.sectionSort=(v==='created'?'created':'alpha'); saveSettings(); updateSectionSortUI(); renderSectionMgr(); refreshSectionUIs(); }
+function renderSectionMgr(){
+  const el=document.getElementById('sectionMgr'); if(!el)return;
+  const secs=sectionsForLang(activeLang,true);
+  let html='<div class="secmgr-head">Sekce v jazyce '+LANGS[activeLang].name+'</div>';
+  if(!secs.length) html+='<div class="secnone" style="padding:6px 2px;">Zatím žádné sekce.</div>';
+  else html+=secs.map(s=>'<div class="secmgr-row"><span class="nm">'+esc(s.name)+'</span><span class="cnt">'+sectionCount(activeLang,s.name)+'</span>'
+      +'<button title="Přejmenovat" data-n="'+esc(s.name)+'" onclick="renameSection(this.dataset.n)">✎</button>'
+      +'<button title="Smazat" data-n="'+esc(s.name)+'" onclick="deleteSection(this.dataset.n)">✕</button></div>').join('');
+  html+='<button class="btn ghost" style="margin-top:10px;" onclick="createSectionPrompt()">➕ Nová sekce</button>';
+  el.innerHTML=html;
+}
+function refreshSectionUIs(){
+  renderSecBar('listSecBar',listSectionSel,'list');
+  renderSecBar('learnSecBar',learnSectionSel,'learn');
+  populateSaveSecSel();
+  if(!document.getElementById('view-list').classList.contains('hidden'))renderList();
+}
+function createSectionPrompt(){ const name=(prompt('Název nové sekce ('+LANGS[activeLang].name+'):')||'').trim(); if(!name)return; ensureSection(activeLang,name); renderSectionMgr(); refreshSectionUIs(); toast('Sekce přidána'); }
+function renameSection(oldName){
+  const nn=(prompt('Nový název sekce:',oldName)||'').trim(); if(!nn||nn===oldName)return;
+  const ex=findSection(activeLang,oldName); if(ex)ex.name=nn;
+  words.forEach(w=>{ if(w.lang===activeLang && Array.isArray(w.sections)){
+    w.sections=w.sections.map(s=>String(s).toLowerCase()===oldName.toLowerCase()?nn:s);
+    w.sections=w.sections.filter((s,i)=>w.sections.findIndex(x=>String(x).toLowerCase()===String(s).toLowerCase())===i);
+  }});
+  const seen=new Set(); sectionsReg=sectionsReg.filter(s=>{ if(s.lang!==activeLang)return true; const k=s.name.toLowerCase(); if(seen.has(k))return false; seen.add(k); return true; });
+  if(listSectionSel.has(oldName)){listSectionSel.delete(oldName);listSectionSel.add(nn);}
+  if(learnSectionSel.has(oldName)){learnSectionSel.delete(oldName);learnSectionSel.add(nn);}
+  saveSecSel(); saveSections(); save(); renderSectionMgr(); refreshSectionUIs(); toast('Přejmenováno');
+}
+function deleteSection(name){
+  if(!confirm('Smazat sekci „'+name+'"? Slovíčka zůstanou, jen ztratí tento štítek.'))return;
+  sectionsReg=sectionsReg.filter(s=>!(s.lang===activeLang && s.name.toLowerCase()===name.toLowerCase()));
+  words.forEach(w=>{ if(w.lang===activeLang && Array.isArray(w.sections)) w.sections=w.sections.filter(s=>String(s).toLowerCase()!==name.toLowerCase()); });
+  listSectionSel.delete(name); learnSectionSel.delete(name); saveSecSel();
+  saveSections(); save(); renderSectionMgr(); refreshSectionUIs(); toast('Sekce smazána');
 }
 function changeSetting(key,delta){
   const def=SETTING_DEFS.find(d=>d.key===key);if(!def)return;
@@ -1282,8 +1480,13 @@ function show(v){
 /* ---------- init ---------- */
 loadSettings();
 loadLang();
+sectionsReg=loadSections();
+loadSecSel();
+loadSecSelForLang();
+healSections();
 to=activeLang; from='cs';
 renderLangbar();
+populateSaveSecSel();
 if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged=loadVoices; }
 if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
