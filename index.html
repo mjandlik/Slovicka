@@ -146,7 +146,8 @@
   .secbar::-webkit-scrollbar{display:none;}
   .secchip{flex:0 0 auto;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap;}
   .secchip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
-  .savesecrow{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:var(--ink-soft);}
+  .secchip .sdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+  .savesecrow{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:13px;color:var(--ink-soft);}
   .savesecrow select{flex:1;min-width:0;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;font-family:inherit;}
   .secedit{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
   .secedit .secchip{cursor:default;display:inline-flex;align-items:center;gap:6px;}
@@ -159,6 +160,11 @@
   .secmgr-row .nm{flex:1;min-width:0;color:var(--ink);}
   .secmgr-row .cnt{color:var(--ink-faint);font-size:13px;}
   .secmgr-row button{background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:4px;}
+  #statBoxes{margin-bottom:14px;}
+  .btn.need{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  .listcount{text-align:right;color:var(--ink-faint);font-size:12px;margin-bottom:8px;}
+  .cardsecs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px;}
+  .cardsecs .csec{font-size:11px;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:2px 10px;background:var(--surface-2);}
   .item .cs{font-size:14px;color:var(--ink-soft);}
   .item .del{background:transparent;border:none;color:var(--ink-faint);font-size:19px;cursor:pointer;padding:4px 6px;}
   .empty-note{text-align:center;color:var(--ink-faint);padding:40px 10px;font-size:15px;line-height:1.5;}
@@ -251,7 +257,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v64</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v66</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -279,31 +285,15 @@
 
   <!-- ============ WORD LIST ============ -->
   <section id="view-list" class="hidden">
-    <div id="backupBanner" class="hidden" style="background:var(--surface-2);border:1px solid var(--accent);border-radius:12px;padding:11px 13px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-      <span style="flex:1;font-size:14px;line-height:1.35;">Máš nezálohované změny.</span>
-      <button class="btn" style="margin:0;width:auto;padding:9px 15px;font-size:14px;" onclick="exportWords()">Zálohovat</button>
-    </div>
-    <div class="stats">
-      <div class="stat s-learn" id="stat1" onclick="toggleBoxFilter(1)"><b id="stLearn">0</b><small>Neumím</small></div>
-      <div class="stat s-almost" id="stat2" onclick="toggleBoxFilter(2)"><b id="stAlmost">0</b><small>Trochu umím</small></div>
-      <div class="stat s-known" id="stat3" onclick="toggleBoxFilter(3)"><b id="stKnown">0</b><small>Umím</small></div>
-      <div class="stat s-done" id="stat4" onclick="toggleBoxFilter(4)"><b id="stDone">0</b><small>Naučeno</small></div>
-    </div>
-    <div style="display:flex;gap:8px;margin:0 0 8px;">
-      <button class="btn ghost" style="margin:0;font-size:13px;padding:8px;flex:1;" onclick="exportWords()">⬇ Záloha</button>
-      <button class="btn ghost" style="margin:0;font-size:13px;padding:8px;flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
-      <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
-    </div>
-    <div class="listhead">
-      <h2>Moje slovíčka</h2>
-      <span class="tag" id="totalCount">0</span>
-    </div>
-    <div class="dir" id="listLangRow" style="margin-bottom:10px;">
+    <button class="btn ghost" id="listBackupBtn" style="margin:0 0 12px;" onclick="exportWords()">⬇ Záloha</button>
+    <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:8px;">
+    <div id="listStavBar" class="secbar"></div>
+    <div id="listSecBar" class="secbar hidden"></div>
+    <div class="dir" id="listLangRow" style="margin-bottom:8px;">
       <button id="llEn" class="on" onclick="setListLang('fw')">Anglicky</button>
       <button id="llCs" onclick="setListLang('cs')">Česky</button>
     </div>
-    <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:10px;">
-    <div id="listSecBar" class="secbar hidden"></div>
+    <div class="listcount"><span id="totalCount">0</span> slovíček</div>
     <div id="wordList"></div>
   </section>
 
@@ -332,6 +322,7 @@
         <span class="word" id="cardWord"></span>
         <span class="cardpron" id="cardPron"></span>
         <span class="hint" id="cardPos" style="margin-top:8px;color:var(--ink-faint);font-size:13px;"></span>
+        <div id="cardSections" class="cardsecs"></div>
         <span class="hint" id="cardHint">ťukni pro otočení</span>
       </div>
       <div id="cardEditPanel" class="panel hidden" style="margin-top:12px;">
@@ -369,6 +360,7 @@
   <section id="view-stats" class="hidden">
     <div class="listhead"><h2>Statistika</h2></div>
     <div id="statEmpty" class="empty-note hidden">Zatím tu nic není.<br>Přidej si nějaká slovíčka.</div>
+    <div class="stats" id="statBoxes"></div>
     <div id="statNums" class="numgrid"></div>
     <div id="statCharts"></div>
     <div style="height:90px;"></div>
@@ -381,6 +373,11 @@
     <div id="settingsList"></div>
     <div id="weightInfo" class="weightinfo"></div>
     <button class="btn ghost" style="margin-top:6px;" onclick="resetSettings()">Obnovit výchozí hodnoty</button>
+
+    <div class="listhead" style="margin-top:24px;"><h2>Data</h2></div>
+    <p class="sub" style="margin:0 0 12px;color:var(--ink-faint);font-size:13px;">Načtení / sloučení slovíček ze zálohy nebo z AI importu.</p>
+    <button class="btn ghost" style="margin:0;" onclick="document.getElementById('syncFile').click()">🔄 Obnovit ze zálohy (Sync)</button>
+    <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
 
     <div class="listhead" style="margin-top:24px;"><h2>Sekce</h2></div>
     <div class="setrow">
@@ -398,7 +395,7 @@
   <section id="view-guide" class="hidden">
     <div class="listhead"><h2>Návod</h2></div>
     <div class="guide">
-      <div class="warn">⚠️ <b>Důležité – zálohuj!</b> Slovíčka jsou uložená jen v tomto prohlížeči. Když vymažeš historii / data prohlížeče (nebo appku odinstaluješ), <b>data se nenávratně ztratí</b>. Pravidelně dělej <b>Zálohu</b> (v záložce Slovíčka) a soubor si ulož mimo prohlížeč (Disk, Soubory). Zpět ho načteš přes <b>Sync</b>.</div>
+      <div class="warn">⚠️ <b>Důležité – zálohuj!</b> Slovíčka jsou uložená jen v tomto prohlížeči. Když vymažeš historii / data prohlížeče (nebo appku odinstaluješ), <b>data se nenávratně ztratí</b>. Pravidelně dělej <b>Zálohu</b> (v záložce Slovíčka) a soubor si ulož mimo prohlížeč (Disk, Soubory). Zpět ho načteš přes <b>Sync</b> (v Nastavení → Data).</div>
       <h3>Co appka umí</h3>
       <p>Slovíčka je tvůj osobní trenér slovní zásoby pro pět jazyků: <b>angličtinu, němčinu, španělštinu, italštinu a řečtinu</b> (vždy ve dvojici s češtinou). Překládá, ukládá slovíčka, učí je metodou chytrého opakování a vede statistiku. Vše běží offline v prohlížeči, jen překlad a výslovnost potřebují internet.</p>
 
@@ -441,7 +438,7 @@
       </ul>
 
       <h3>Záloha a obnovení</h3>
-      <p>Data jsou jen v prohlížeči – <b>pravidelně dělej Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše. <b>Pozor:</b> vymazání dat/historie prohlížeče data v appce smaže – přežije jen tvůj zálohovaný soubor.</p>
+      <p>Data jsou jen v prohlížeči – <b>pravidelně dělej Zálohu</b> (v záložce Slovíčka). Vznikne soubor, který si ulož (Disk, Soubory). Přes <b>Sync</b> (v Nastavení → Data) ho kdykoli načteš zpět; slovíčka se chytře sloučí a nic se nepřepíše. <b>Pozor:</b> vymazání dat/historie prohlížeče data v appce smaže – přežije jen tvůj zálohovaný soubor.</p>
 
       <h3>Import slovíček přes AI (z fotky i textu)</h3>
       <p>Zálohový soubor obsahuje skryté instrukce pro AI. Můžeš tak nechat slovíčka doplnit umělou inteligencí:</p>
@@ -449,7 +446,7 @@
         <li>Přepni se v appce na jazyk, který se učíš, a dej <b>Záloha</b>.</li>
         <li>V chatu s AI (např. ChatGPT, Claude, Gemini) <b>nahraj tento soubor</b> a k němu buď <b>fotku</b> slovníku/seznamu, nebo <b>nakopíruj text</b>.</li>
         <li>Napiš třeba: „Přidej do souboru slovíčka z téhle fotky" nebo „...z tohoto textu". AI podle instrukcí v souboru najde slovíčka, přeskočí ta, co už v souboru jsou, a přidá nová jako „Neumím".</li>
-        <li>Upravený soubor ti AI vrátí – ten pak v appce načteš přes <b>Sync</b>.</li>
+        <li>Upravený soubor ti AI vrátí – ten pak v appce načteš přes <b>Sync</b> (Nastavení → Data).</li>
       </ul>
       <p>Z textu AI vybere všechna slova, která v souboru ještě nejsou. Existující slovíčka ani jejich pokrok nemění. Pokud nepozná jazyk, zeptá se.</p>
 
@@ -568,11 +565,13 @@ function clearSecSel(kind){ (kind==='list'?listSectionSel:learnSectionSel).clear
 function toggleSecChip(kind,name){ const sel=kind==='list'?listSectionSel:learnSectionSel; if(sel.has(name))sel.delete(name); else sel.add(name); saveSecSel(); afterSecChange(kind); }
 function afterSecChange(kind){ if(kind==='list')renderList(); else startLearn(sessionAll); }
 function updateBackupBanner(){
-  const b=document.getElementById('backupBanner');if(!b)return;
   const changed=+(localStorage.getItem(KEY+'_changed')||0);
   const backup=+(localStorage.getItem(KEY+'_backup')||0);
-  b.classList.toggle('hidden', !(words.length>0 && changed>backup));
+  const need=(words.length>0 || sectionsReg.length>0) && changed>backup;
+  const btn=document.getElementById('listBackupBtn');
+  if(btn){ btn.classList.toggle('need',need); btn.textContent = need ? '⬇ Záloha – máš neuložené změny' : '⬇ Záloha'; }
 }
+function markChanged(){ try{localStorage.setItem(KEY+'_changed',String(Date.now()));}catch(e){} updateBackupBanner(); }
 
 /* ---------- Toast ---------- */
 let toastT;
@@ -643,7 +642,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v64';
+const APP_VER='v66';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -854,7 +853,7 @@ function onSaveSecChange(){
   const sel=document.getElementById('saveSecSel'); if(!sel)return;
   if(sel.value==='__new__'){
     const name=(prompt('Název nové sekce:')||'').trim();
-    if(name){ currentSaveSection=ensureSection(activeLang,name); } 
+    if(name){ currentSaveSection=ensureSection(activeLang,name); markChanged(); } 
     populateSaveSecSel();
     return;
   }
@@ -866,16 +865,16 @@ const BOXNAME={1:'Neumím',2:'Trochu umím',3:'Umím',4:'Naučeno'};
 const BOXVAR={1:'var(--c-learn)',2:'var(--c-almost)',3:'var(--c-known)',4:'var(--c-done)'};
 let boxFilter={1:true,2:true,3:true,4:true};
 function toggleBoxFilter(b){boxFilter[b]=!boxFilter[b];renderList();}
+const STAV=[{b:1,label:'Neumím'},{b:2,label:'Trochu umím'},{b:3,label:'Umím'},{b:4,label:'Naučeno'}];
+function renderStavBar(){
+  const el=document.getElementById('listStavBar'); if(!el)return;
+  el.innerHTML=STAV.map(s=>'<button class="secchip'+(boxFilter[s.b]?' on':'')+'" onclick="toggleBoxFilter('+s.b+')"><i class="sdot" style="background:'+BOXVAR[s.b]+'"></i>'+s.label+'</button>').join('');
+}
 let listLang='fw'; // 'fw' = foreign word primary, 'cs' = czech primary
 function setListLang(l){listLang=l;document.getElementById('llEn').classList.toggle('on',l==='fw');document.getElementById('llCs').classList.toggle('on',l==='cs');renderList();}
 function renderList(){
   const d=deck();
-  const c={1:0,2:0,3:0,4:0};d.forEach(w=>c[w.box]=(c[w.box]||0)+1);
-  document.getElementById('stLearn').textContent=c[1];
-  document.getElementById('stAlmost').textContent=c[2];
-  document.getElementById('stKnown').textContent=c[3];
-  document.getElementById('stDone').textContent=c[4];
-  [1,2,3,4].forEach(b=>{const el=document.getElementById('stat'+b);if(el)el.classList.toggle('on',!!boxFilter[b]);});
+  renderStavBar();
   renderSecBar('listSecBar',listSectionSel,'list');
   const list=document.getElementById('wordList');
   if(!d.length){document.getElementById('totalCount').textContent=0;list.innerHTML='<div class="empty-note">Žádná slovíčka v jazyce '+LANGS[activeLang].name+'.<br>Přelož něco a ulož si to.</div>';return;}
@@ -1216,6 +1215,8 @@ function showCard(){
   document.getElementById('cardSide').textContent=front.label;
   document.getElementById('cardWord').textContent=front.word;
   document.getElementById('cardPos').textContent = w.pos ? posLabel(w.pos) : '';
+  const csEl=document.getElementById('cardSections');
+  if(csEl) csEl.innerHTML=(w.sections&&w.sections.length)? w.sections.map(n=>'<span class="csec">'+esc(n)+'</span>').join('') : '';
   animWord();
   renderCardPron();
   document.getElementById('cardHint').classList.remove('hidden');
@@ -1358,7 +1359,15 @@ function renderStats(){
   document.getElementById('statEmpty').classList.toggle('hidden',!empty);
   document.getElementById('statNums').classList.toggle('hidden',empty);
   document.getElementById('statCharts').classList.toggle('hidden',empty);
-  if(empty){document.getElementById('statNums').innerHTML='';document.getElementById('statCharts').innerHTML='';return;}
+  const sb=document.getElementById('statBoxes');
+  sb.classList.toggle('hidden',empty);
+  if(empty){document.getElementById('statNums').innerHTML='';document.getElementById('statCharts').innerHTML='';sb.innerHTML='';return;}
+  const cc={1:0,2:0,3:0,4:0};d.forEach(w=>cc[w.box]=(cc[w.box]||0)+1);
+  sb.innerHTML=
+    '<div class="stat s-learn"><b>'+cc[1]+'</b><small>Neumím</small></div>'+
+    '<div class="stat s-almost"><b>'+cc[2]+'</b><small>Trochu umím</small></div>'+
+    '<div class="stat s-known"><b>'+cc[3]+'</b><small>Umím</small></div>'+
+    '<div class="stat s-done"><b>'+cc[4]+'</b><small>Naučeno</small></div>';
   const wkNow=weekStart(Date.now());
   const addedThisWeek=d.filter(w=>weekStart(w.added||Date.now())===wkNow).length;
   document.getElementById('statNums').innerHTML=
@@ -1432,7 +1441,7 @@ function refreshSectionUIs(){
   populateSaveSecSel();
   if(!document.getElementById('view-list').classList.contains('hidden'))renderList();
 }
-function createSectionPrompt(){ const name=(prompt('Název nové sekce ('+LANGS[activeLang].name+'):')||'').trim(); if(!name)return; ensureSection(activeLang,name); renderSectionMgr(); refreshSectionUIs(); toast('Sekce přidána'); }
+function createSectionPrompt(){ const name=(prompt('Název nové sekce ('+LANGS[activeLang].name+'):')||'').trim(); if(!name)return; ensureSection(activeLang,name); markChanged(); renderSectionMgr(); refreshSectionUIs(); toast('Sekce přidána'); }
 function renameSection(oldName){
   const nn=(prompt('Nový název sekce:',oldName)||'').trim(); if(!nn||nn===oldName)return;
   const ex=findSection(activeLang,oldName); if(ex)ex.name=nn;
