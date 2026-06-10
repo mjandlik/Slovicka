@@ -256,7 +256,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v72</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v76</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -418,6 +418,9 @@
 
       <h3>Učení</h3>
       <p>Nekonečné procvičování kartiček. Ťuknutím kartičku otočíš, pak ohodnotíš <b>Neumím / Trochu umím / Umím</b>, nebo <b>Naučeno už nenabízet</b> (přestane se nabízet). Co neumíš, vrátí se brzy; známé se přimíchávají méně. Směr (česky → cizí / opačně) přepneš nahoře. Na cizí straně se ukáže <b>výslovnost</b> (je-li uložená). Slovo, překlad i výslovnost upravíš přes tužku <b>✎</b> na kartičce.</p>
+      <p><b>Chytré „Umím":</b> appka si u každého slova pamatuje, <b>kolikrát po sobě</b> jsi dal Umím, a <b>kdy</b> to bylo. Čerstvě naučené slovo (1.–2× Umím) se ještě párkrát vrátí, protože je riziko, že ho zapomeneš. S každým dalším „Umím" za sebou se odstup prodlužuje (zhruba <b>1 → 3 → 7 → 16 → 35 → 60 dní</b>). Když ho mezitím dáš Neumím/Trochu, počítadlo se vynuluje a slovo se zase objevuje častěji. (Ukládá se i historie posledních 10 hodnocení – nese se v záloze.)</p>
+      <p><b>„Trochu umím"</b> se chová podobně, ale jen mírně: odstup roste pomalu a s nízkým stropem (<b>2 → 3 → 4 → 6 dní</b>), aby slovo, které umíš jen částečně, zůstalo v časté rotaci, dokud ho nezvládneš.</p>
+      <p><b>Rovnoměrné protáčení:</b> když máš hodně slov s podobnou váhou, appka upřednostní to, které jsi <b>nejdéle neviděl</b> – posuzuje to relativně vůči zrovna procvičované zásobě, takže to funguje stejně, ať se učíš hodinu v kuse nebo 10 minut dvakrát týdně. Místo náhodného opakování stejných pár slov tak postupně projdeš všechna; nová a dlouho neviděná mají přednost.</p>
 
       <h3>Statistika a Nastavení</h3>
       <p>Statistika ukazuje počty a vývoj v čase pro aktuální jazyk. V Nastavení vyladíš chování učení (jak rychle se vrací neznámá slova, jak často se míchají kategorie).</p>
@@ -443,7 +446,7 @@
         <li>Pošleš <b>fotku</b> slovíček nebo textu, nebo <b>nakopíruješ</b> slovíčka či text. AI se zeptá na jazyk a na sekci (novou, existující, nebo žádnou).</li>
         <li>AI ti vrátí upravený soubor – ten <b>ulož</b> a v appce načti přes <b>Sync</b> (v záložce Slovíčka). Hotová slovíčka se přidají jako „Neumím".</li>
       </ul>
-      <p>AI přidá jen slova, která v souboru ještě nejsou, a stávající slovíčka ani jejich pokrok nemění.</p>
+      <p>AI slovíčka jen <b>přidává</b> a stávající nepřepisuje. O duplicity a kontrolu formátu se postará sama appka při Sync – když je slovo už v seznamu, nezduplikuje ho (jen ho případně přidá do nové sekce a vrátí na „Neumím").</p>
 
       <h3>Soukromí a aktualizace</h3>
       <ul>
@@ -516,6 +519,8 @@ function migrateWord(w){
   if(w.pron==null) w.pron='';
   if('hidden' in w){ if(w.hidden===true) w.box=4; delete w.hidden; } // unified into "naučeno"
   if(!Array.isArray(w.sections)) w.sections=[];
+  if(typeof w.streak!=='number') w.streak=0;        // consecutive "Umím" count
+  if(!Array.isArray(w.history)) w.history=[];        // last results: {b:box, t:timestamp}, max 10
   return w;
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();}
@@ -637,7 +642,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v72';
+const APP_VER='v76';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -986,15 +991,12 @@ async function exportWords(){
       +'KROK 1 (zahájení): Hned po nahrání souboru – i když uživatel nic nenapíše – ho pozdrav, jednou větou řekni, že mu pomůžeš přidat slovíčka, a zeptej se, jak je chce dodat: (a) fotka slovíček/slovníčku, (b) fotka textu (vytáhneš slovíčka z něj), (c) napsaná/nakopírovaná dvojice slovíček, (d) nakopírovaný text. Vyzvi ho, ať pošle zdroj. '
       +'KROK 2 (jazyk): Urči cílový jazyk nových slov. Výchozí je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština, it=italština, el=řečtina). Pokud zdroj jednoznačně ukazuje jiný jazyk nebo si ho uživatel přeje, použij ten. Když to není jasné, zeptej se. '
       +'KROK 3 (sekce): Zeptej se, kam slovíčka zařadit: (a) nová sekce – řekne název, ty přidáš do horního pole "sections" objekt {name, created: hodnota now_ms, lang: jazyk slov} a všem novým slovům dáš tento název do "sections"; (b) existující sekce – NABÍDNI mu výpis názvů sekcí z pole "sections" pro daný jazyk, ať si vybere, a použij PŘESNĚ stejný název (nezakládej duplikát); (c) bez sekce – "sections" necháš []. '
-      +'KROK 4 (zpracování): Ze zdroje vytáhni všechna smysluplná slovíčka. Jeden význam = jedno slovo "foreign" + český překlad "cs" (české poznáš podle diakritiky; chybí-li překlad, dopřelož). Každé nové slovíčko vytvoř podle "_schema": box vždy 1 (Neumím), lastReviewed null, do "added" i "due" zkopíruj číslo z "now_ms", "id" unikátní (např. now_ms + pořadí), "pron" a "pos" nech "" pokud je neznáš (u řečtiny a jiného nelatinkového písma doplň přepis výslovnosti do "pron"), "sections" podle KROKU 3. '
-      +'DUPLICITY (KONTROLUJ U KAŽDÉHO SLOVA ZE ZDROJE): zjisti, zda už v "words" existuje záznam se stejnou kombinací lang + cs + foreign zároveň (bez ohledu na velikost písmen). '
-      +'• Pokud NEEXISTUJE → přidej NOVÝ záznam (box 1, sekce podle KROKU 3). '
-      +'• Pokud UŽ EXISTUJE → NEZAKLÁDEJ druhý záznam; místo toho uprav TEN STÁVAJÍCÍ: (a) do jeho "sections" přidej název sekce z tohoto importu, pokud tam ještě není (ostatní jeho sekce ponech), a (b) nastav mu "box" na 1 (Neumím) a "due" na hodnotu now_ms. Nic jiného u něj neměň. '
-      +'Když se shoduje jen JEDNA strana (stejné cs, jiný foreign – nebo naopak), je to JINÝ význam → přidej jako nový záznam. '
+      +'KROK 4 (zpracování): Ze zdroje vytáhni všechna smysluplná slovíčka. Jeden význam = jedno slovo "foreign" + český překlad "cs" (české poznáš podle diakritiky; chybí-li překlad, dopřelož). Každé nové slovíčko vytvoř podle "_schema": box vždy 1 (Neumím), lastReviewed null, "streak" 0, "history" [], do "added" i "due" zkopíruj číslo z "now_ms", "id" unikátní (např. now_ms + pořadí), "pron" a "pos" nech "" pokud je neznáš (u řečtiny a jiného nelatinkového písma doplň přepis výslovnosti do "pron"), "sections" podle KROKU 3. '
+      +'DŮLEŽITÉ – JEN PŘIDÁVEJ, NIKDY NEPŘEPISUJ: Tvým jediným úkolem je PŘIDAT nová slovíčka na KONEC pole "words". NESMÍŠ měnit, mazat, přepisovat ani přeskupovat žádný stávající záznam ve "words" (ani jeho box, sekce, id, nic). Stejně tak NESMÍŠ měnit "sections" (kromě přidání úplně nové sekce z KROKU 3) ani "settings" – ty zkopíruj beze změny. Duplicity NEŘEŠ – o to se postará sama aplikace při importu. Ty prostě přidej všechna slovíčka ze zdroje jako nové záznamy (box 1, sekce dle KROKU 3); pokud je některé už v seznamu, aplikace ho sama nezduplikuje. '
       +'VÍCE VÝZNAMŮ = VÍCE ZÁZNAMŮ: Pokud má slovo víc překladů/významů (oddělených čárkou, lomítkem, středníkem, slovem „nebo" apod.), NIKDY je nedávej do jednoho pole jako „nahrát, zaznamenat". Vytvoř SAMOSTATNÝ záznam pro KAŽDÝ význam – v poli "cs" i "foreign" smí být jen JEDEN význam (žádné čárky ani lomítka spojující významy). Příklad: „record = nahrát, zaznamenat" → DVA záznamy: {foreign:"record", cs:"nahrát"} a {foreign:"record", cs:"zaznamenat"}. Totéž když má víc variant cizí strana – každá dvojice je vlastní záznam. '
-      +'Slov, která NEJSOU v tomto importu (zdroj je nezmiňuje), se NEDOTÝKEJ – neměň jim box, due, sekce ani nic jiného. Nepřejmenovávej a neslučuj existující sekce. Neměň pole "settings". '
+      +'KONTROLA FORMÁTU: Výstup musí být PLATNÝ JSON se STEJNOU strukturou jako vstup – stejná pole na nejvyšší úrovni, "words" je pole objektů, každý nový objekt má všechna pole z "_schema" (žádné nepřejmenuj, nevynech, nepřidávej navíc). Nic nerozbij, neořezávej, needituj uvozovky ani čísla u stávajících záznamů. Před odesláním si v duchu ověř, že JSON jde naparsovat. '
       +'KROK 5 (výstup): Vrať CELÝ upravený soubor jako JEDEN platný JSON (v bloku kódu, nic víc kolem). Pak uživateli řekni: 1) kolik slov jsi přidal a do jaké sekce, 2) ať si JSON ULOŽÍ jako soubor, 3) ať ho v aplikaci Slovíčka načte přes Sync (záložka Slovíčka → tlačítko Sync). ',
-    _schema:{lang:'en | de | es | it | el', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', id:'unikátní číslo', sections:'pole názvů sekcí, např. ["Unit 5"] nebo [] '},
+    _schema:{lang:'en | de | es | it | el', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', streak:'0 (u nových)', history:'[] (u nových)', id:'unikátní číslo', sections:'pole názvů sekcí, např. ["Unit 5"] nebo [] '},
     _schema_sekce:{name:'název sekce', created:'čas vzniku v ms (u nové sekce zkopíruj now_ms)', lang:'jazyk sekce: en|de|es|it|el'},
     now_ms:Date.now(),
     defaultLang:activeLang,
@@ -1038,12 +1040,12 @@ function mergeWords(incoming){
   const keyOf=w=>String(w.lang)+'|'+String(w.foreign).toLowerCase()+'|'+String(w.cs).toLowerCase();
   const map=new Map();
   words.forEach(w=>map.set(keyOf(w),w));
-  let added=0;
+  let added=0, skipped=0;
   incoming.forEach(it=>{
-    if(!it)return;
+    if(!it||typeof it!=='object'){skipped++;return;}
     const lang=(it.lang && LANGS[it.lang])?it.lang:'en';        // old files had no lang → English
     const foreign=(it.foreign!=null?it.foreign:(it.en!=null?it.en:''));
-    if(!foreign||!it.cs)return;
+    if(!String(foreign||'').trim()||!String(it.cs||'').trim()){skipped++;return;} // malformed → skip, don't break import
     const norm={
       id: it.id||(Date.now()+Math.floor(Math.random()*100000)),
       lang, foreign:String(foreign), cs:String(it.cs),
@@ -1053,6 +1055,8 @@ function mergeWords(incoming){
       due:toMs(it.due),
       pos:it.pos||'',
       lastReviewed:it.lastReviewed||null,
+      streak: (typeof it.streak==='number' && it.streak>=0)?it.streak:0,
+      history: Array.isArray(it.history)?it.history.slice(-10):[],
       sections:Array.isArray(it.sections)?it.sections.map(String):[]
     };
     const unionSecs=(a,b)=>{const out=[...(a||[])];(b||[]).forEach(n=>{if(!out.some(x=>String(x).toLowerCase()===String(n).toLowerCase()))out.push(n);});return out;};
@@ -1072,7 +1076,7 @@ function mergeWords(incoming){
     }
   });
   words=[...map.values()].sort((a,b)=>(b.added||0)-(a.added||0));
-  return added;
+  return {added, skipped};
 }
 function applyIncomingSettings(s){
   if(!s||typeof s!=='object')return false;
@@ -1094,22 +1098,33 @@ function syncWords(ev){
   if(!file)return;
   const reader=new FileReader();
   reader.onload=function(){
+    let data;
+    try{ data=JSON.parse(reader.result); }
+    catch(e){ toast('Soubor není platný JSON – AI nejspíš porušila formát. Nech ho vygenerovat znovu.'); return; }
     try{
-      const data=JSON.parse(reader.result);
       let arr=null, incomingSettings=null;
       if(Array.isArray(data)){ arr=data; }                                   // old format: bare list
       else if(data && Array.isArray(data.words)){ arr=data.words; incomingSettings=data.settings||null; } // new format
-      else throw new Error('bad');
-      const added=mergeWords(arr);
+      else { toast('Tohle nevypadá jako záloha Slovíček (chybí pole „words").'); return; }
+      if(!arr.length){ toast('V souboru nejsou žádná slovíčka.'); return; }
+
+      const before=words.length;
+      const {added,skipped}=mergeWords(arr);
+      if(!Array.isArray(words)||words.length<before){ // sanity: merge must never lose existing words
+        toast('Import přerušen kvůli chybě formátu, tvá slovíčka zůstala beze změny.'); return;
+      }
       if(data && Array.isArray(data.sections)){
         data.sections.forEach(s=>{ if(s&&s.name){ const lang=(s.lang&&LANGS[s.lang])?s.lang:'en'; const ex=findSection(lang,s.name); if(!ex) sectionsReg.push({name:String(s.name),created:toMs(s.created),lang}); else ex.created=Math.min(ex.created||toMs(s.created),toMs(s.created)); } });
       }
       healSections(); saveSections();
       const setApplied = incomingSettings ? applyIncomingSettings(incomingSettings) : false;
       save();renderList(); // marks changes pending → banner will prompt for Záloha
-      toast('Sloučeno: +'+added+' nových, celkem '+words.length+(setApplied?' • nastavení načteno':'')+'. Dej Zálohu.');
+      let msg='Sloučeno: +'+added+' nových, celkem '+words.length;
+      if(skipped>0) msg+=' • '+skipped+' přeskočeno (špatný formát)';
+      if(setApplied) msg+=' • nastavení načteno';
+      toast(msg+'. Dej Zálohu.');
     }catch(e){
-      toast('Soubor se nepodařilo načíst');
+      toast('Soubor se nepodařilo načíst – zkontroluj, že ho AI nerozbila.');
     }
   };
   reader.readAsText(file);
@@ -1118,6 +1133,11 @@ function syncWords(ev){
 /* ---------- Learning (adaptive endless session over a Leitner base) ---------- */
 // Long-term schedule (days until offered again on following days), by category.
 const INTERVAL_DAYS={1:1,2:3,3:7};
+const UMIM_LADDER=[1,3,7,16,35,60];   // dní do dalšího nabídnutí podle počtu „Umím" za sebou
+const TROCHU_LADDER=[2,3,4,6];        // „Trochu umím" – jen mírný růst, nízký strop (zůstává v rotaci)
+function umimInterval(streak){ return UMIM_LADDER[Math.min(Math.max(1,streak)-1, UMIM_LADDER.length-1)]; }
+function trochuInterval(streak){ return TROCHU_LADDER[Math.min(Math.max(1,streak)-1, TROCHU_LADDER.length-1)]; }
+function consecTail(history,box){ let n=0; const h=history||[]; for(let i=h.length-1;i>=0;i--){ if(h[i] && h[i].b===box) n++; else break; } return n; }
 const DAY_MS=86400000;
 // Session tuning
 // Adjustable learning parameters (editable in Nastavení)
@@ -1162,7 +1182,22 @@ function sessionPool(){return words.filter(w=> w.lang===activeLang && (sessionAl
 function weightedPick(cands){
   if(!cands.length)return null;
   const now=Date.now();
-  let total=0;const ws=cands.map(w=>{let wt=(w.box===1?settings.wLearn:w.box===2?settings.wAlmost:w.box===3?settings.wKnown:1)||1;if((w.due||0)<=now)wt*=2;total+=wt;return wt;});
+  // rotace nezávislá na tempu učení: seřaď podle „naposledy viděno" RELATIVNĚ v rámci aktuální zásoby
+  const times=cands.map(w=>w.lastReviewed||0);
+  const minT=Math.min.apply(null,times), maxT=Math.max.apply(null,times);
+  const span=maxT-minT;
+  let total=0;const ws=cands.map(w=>{
+    let wt;
+    if(w.box===1) wt=settings.wLearn;
+    else if(w.box===2) wt=settings.wAlmost;
+    else if(w.box===3) wt=settings.wKnown + Math.max(0, 3-(w.streak||0)); // čerstvé Umím (streak 1/2) ~ vyšší; pevné = základ
+    else wt=1;
+    wt=wt||1;
+    if((w.due||0)<=now)wt*=2;                       // po termínu → dvojnásobná šance
+    const rel = span>0 ? (maxT-(w.lastReviewed||0))/span : 0; // 0 = naposledy viděné, 1 = nejdéle neviděné / nové
+    wt*=1+rel;                                      // nejdéle neviděné až 2×, čerstvě viděné ~1× (relativně, ne na pevný čas)
+    total+=wt;return wt;
+  });
   let r=Math.random()*total;
   for(let i=0;i<cands.length;i++){r-=ws[i];if(r<=0)return cands[i];}
   return cands[cands.length-1];
@@ -1280,15 +1315,23 @@ function renderCardPron(){
 function rate(box){
   const w=currentCard; if(!w)return;
   const real=words.find(x=>x.id===w.id)||w;
+  const now=Date.now();
+  if(!Array.isArray(real.history)) real.history=[];
+  real.history.push({b:box,t:now}); if(real.history.length>10) real.history.shift();
+  real.streak = (box===3) ? (real.streak||0)+1 : 0;     // consecutive "Umím"; anything else resets
   real.box=box;
-  real.lastReviewed=Date.now();
-  real.due = box===4 ? (Date.now()+3650*DAY_MS) : (Date.now()+INTERVAL_DAYS[box]*DAY_MS);
+  real.lastReviewed=now;
+  real.due = box===4 ? (now+3650*DAY_MS)
+           : box===3 ? (now + umimInterval(real.streak)*DAY_MS)               // 1→3→7→16→35→60 dní
+           : box===2 ? (now + trochuInterval(consecTail(real.history,2))*DAY_MS) // 2→3→4→6 dní (mírně)
+           : (now + INTERVAL_DAYS[1]*DAY_MS);
   reviewedThisSession++;
   save();
   // short-term behaviour within this endless session
-  if(box===1) insertSoon(real,settings.gapNeumim);    // neumím → comes back soon
-  else if(box===2) insertSoon(real,settings.gapSkoro); // skoro → comes back later
-  else queue=queue.filter(x=>x!==real);            // umím / naučeno → leave the loop
+  if(box===1) insertSoon(real,settings.gapNeumim);              // neumím → comes back soon
+  else if(box===2) insertSoon(real,settings.gapSkoro);          // trochu → comes back later
+  else if(box===3 && real.streak<2) insertSoon(real,settings.gapSkoro*2); // čerstvé „Umím" → ještě jednou ověřit (dál ve frontě)
+  else queue=queue.filter(x=>x!==real);                         // pevné Umím / Naučeno → ze smyčky ven
   if(nextCard()) showCard(); else finishLearn();
 }
 function finishLearn(){
