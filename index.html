@@ -112,6 +112,8 @@
   .opt .opt-sq{display:grid;grid-template-columns:repeat(3,21px);gap:3px;flex:0 0 auto;}
   .langsq{display:flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);font-size:9px;font-weight:700;cursor:pointer;user-select:none;line-height:1;letter-spacing:.2px;}
   .langsq.armed{background:#3a352f;color:var(--ink);border-color:#4a443c;}
+  .langsq.exists{background:var(--surface);color:var(--c-known);border-color:var(--c-known);} /* ve slovníku, odznačené → nech být */
+  .langsq.exists.armed{background:var(--c-known);color:#15200a;border-color:var(--c-known);} /* ve slovníku, vybrané → ＋ vrátí na Neumím */
   .langsq.saved{background:var(--c-known);color:#15200a;border-color:var(--c-known);cursor:default;}
   .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
   .cardpron{margin-top:8px;font-size:15px;color:#e3d7c4;min-height:20px;}
@@ -256,7 +258,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v76</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v78</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -407,7 +409,7 @@
       <p>Napiš české nebo cizí slovo a dej <b>Překlad</b>. Šipkou ⇄ přepneš směr. Ukáže se víc variant překladu, u každé:</p>
       <ul>
         <li>🔊 přečte slovo nahlas,</li>
-        <li>čtverečky <b>EN/DE/ESP/IT/GR</b> vedle ＋ určují, do kterých slovníků se má uložit (aktivní jazyk je vždy zapnutý). Po uložení čtvereček <b>zezelená</b>,</li>
+        <li>čtverečky <b>EN/DE/ESP/IT/GR</b> vedle ＋ určují, do kterých slovníků se uloží (aktivní jazyk je vždy zapnutý). <b>Zelený</b> čtvereček = slovo už v daném slovníku máš. Vyplněný zelený je vybraný (＋ ho vrátí na „Neumím"), zelený jen obrysem je odznačený (＋ se ho nedotkne) – odznačíš/zapneš ho klepnutím,</li>
         <li>＋ slovíčko uloží. Můžeš ho stisknout i opakovaně – co už uloženo je, se přeskočí.</li>
       </ul>
       <p><b>Super funkce:</b> klepnutím přímo na <b>přeložené slovo</b> se toto slovo vloží jako nový vstup a hned se přeloží zpátky. Můžeš tak rychle „proklikávat" mezi jazyky a hledat přesný význam.</p>
@@ -642,7 +644,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v76';
+const APP_VER='v78';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -755,12 +757,16 @@ async function translateNow(){
 }
 
 /* ---------- Save word (per chosen option) ---------- */
-let optArm={}, optSaved={}; // per render: option index -> Set of langs armed / saved
+let optArm={}, optSaved={}, optExists={}; // per render: option index -> Set of langs armed / saved / already-in-dictionary
 function langSquaresHTML(i){
   return LANG_ORDER.map(l=>{
     const saved=optSaved[i]&&optSaved[i].has(l);
+    const exists=optExists[i]&&optExists[i].has(l);
     const armed=optArm[i]&&optArm[i].has(l);
-    const cls='langsq'+(saved?' saved':(armed?' armed':''));
+    let cls='langsq';
+    if(saved) cls+=' saved';
+    else if(exists) cls+=' exists'+(armed?' armed':'');
+    else if(armed) cls+=' armed';
     return '<span class="'+cls+'" onclick="toggleLang('+i+',\''+l+'\')">'+LANGS[l].short+'</span>';
   }).join('');
 }
@@ -771,11 +777,24 @@ function toggleLang(i,l){
   if(optArm[i].has(l))optArm[i].delete(l); else optArm[i].add(l);
   renderLangSquares(i);
 }
+function pairInDeck(L,cs,foreign){ cs=(cs||'').trim().toLowerCase(); foreign=(foreign||'').trim().toLowerCase(); return words.some(w=>w.lang===L && w.cs.toLowerCase()===cs && w.foreign.toLowerCase()===foreign); }
+function csInDeck(L,cs){ cs=(cs||'').trim().toLowerCase(); if(!cs)return false; return words.some(w=>w.lang===L && w.cs.toLowerCase()===cs); }
+function computeExists(i,o){
+  // czech headword vs active-language word, per translation direction
+  let csW, activeForeign;
+  if(current && current.from==='cs'){ csW=current.source; activeForeign=o.word; }
+  else { csW=o.word; activeForeign=current?current.source:''; }
+  LANG_ORDER.forEach(L=>{
+    const hit = (L===activeLang) ? pairInDeck(L,csW,activeForeign)   // active lang: known exact pair → match meaning
+                                 : csInDeck(L,csW);                  // other langs: match the Czech headword
+    if(hit) optExists[i].add(L);
+  });
+}
 function renderOptions(options){
-  optArm={};optSaved={};
+  optArm={};optSaved={};optExists={};
   const cont=document.getElementById('opts');
   if(!options||!options.length){cont.innerHTML='';return;}
-  options.forEach((o,i)=>{optArm[i]=new Set([activeLang]);optSaved[i]=new Set();});
+  options.forEach((o,i)=>{optArm[i]=new Set([activeLang]);optSaved[i]=new Set();optExists[i]=new Set();computeExists(i,o);optExists[i].forEach(l=>optArm[i].add(l));});
   cont.innerHTML=options.map((o,i)=>
     '<div class="opt" id="opt'+i+'">'+
       '<span class="opt-w" onclick="retranslate('+i+')">'+
@@ -826,8 +845,15 @@ async function savePair(i){
   for(const L of targets){
     if(optSaved[i].has(L))continue;
     if(L===activeLang){
-      const r=addEntry(activeLang,cs,foreign,opt.pos||'',pron,currentSaveSection);
+      const r=addEntry(activeLang,cs,foreign,opt.pos||'',pron,currentSaveSection); // existing exact pair → addEntry resets to Neumím
       if(r==='ok'||r==='dup'||r==='reset') optSaved[i].add(L);
+    }else if(optExists[i] && optExists[i].has(L)){
+      // už ve slovníku (shoda dle českého slova) → jen nastav na Neumím, nepřekládej znovu (nevytvářej duplikát)
+      const cl=(cs||'').trim().toLowerCase();
+      const sec=currentSaveSection?ensureSection(L,currentSaveSection):'';
+      let n=0;
+      words.forEach(w=>{ if(w.lang===L && w.cs.toLowerCase()===cl){ w.box=1; w.due=Date.now(); if(sec){ if(!Array.isArray(w.sections))w.sections=[]; if(!w.sections.some(s=>String(s).toLowerCase()===sec.toLowerCase())) w.sections.push(sec); } n++; } });
+      if(n){ save(); optSaved[i].add(L); }
     }else{
       try{
         const res=await smartTranslate(cs,'cs',LANGS[L].gt);
@@ -837,7 +863,7 @@ async function savePair(i){
     }
   }
   renderLangSquares(i);
-  toast('Uloženo: '+([...optSaved[i]].map(l=>LANGS[l].short).join(' · ')||'—'));
+  toast('Hotovo: '+([...optSaved[i]].map(l=>LANGS[l].short).join(' · ')||'—'));
 }
 let currentSaveSection='';
 function populateSaveSecSel(){
