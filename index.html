@@ -232,10 +232,9 @@
   .setrow .info{flex:1;min-width:0;}
   .setrow .info .lbl{font-weight:600;font-size:15px;color:var(--ink);}
   .setrow .info .dsc{font-size:12px;color:var(--ink-faint);margin-top:2px;}
-  .stepper{display:flex;align-items:center;gap:0;flex:0 0 auto;}
-  .stepper button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-  .stepper button:active{background:var(--accent);color:var(--accent-ink);}
-  .stepper .val{min-width:34px;text-align:center;font-family:'Fraunces',serif;font-size:20px;color:var(--ink);}
+  .slider{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
+  .slider input[type=range]{width:118px;accent-color:var(--accent);}
+  .slider .val{min-width:44px;text-align:right;font-family:'Fraunces',serif;font-size:18px;color:var(--ink);}
   .weightinfo{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:2px 0 16px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
   .weightinfo b{color:var(--accent);font-family:'Fraunces',serif;}
   .guide{color:var(--ink-soft);font-size:15px;line-height:1.6;}
@@ -258,7 +257,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v79</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v80</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -420,9 +419,9 @@
 
       <h3>Učení</h3>
       <p>Nekonečné procvičování kartiček. Ťuknutím kartičku otočíš, pak ohodnotíš <b>Neumím / Trochu umím / Umím</b>, nebo <b>Naučeno už nenabízet</b> (přestane se nabízet). Co neumíš, vrátí se brzy; známé se přimíchávají méně. Směr (česky → cizí / opačně) přepneš nahoře. Na cizí straně se ukáže <b>výslovnost</b> (je-li uložená). Slovo, překlad i výslovnost upravíš přes tužku <b>✎</b> na kartičce.</p>
-      <p><b>Chytré „Umím":</b> appka si u každého slova pamatuje, <b>kolikrát po sobě</b> jsi dal Umím, a <b>kdy</b> to bylo. Čerstvě naučené slovo (1.–2× Umím) se ještě párkrát vrátí, protože je riziko, že ho zapomeneš. S každým dalším „Umím" za sebou se odstup prodlužuje (zhruba <b>1 → 3 → 7 → 16 → 35 → 60 dní</b>). Když ho mezitím dáš Neumím/Trochu, počítadlo se vynuluje a slovo se zase objevuje častěji. (Ukládá se i historie posledních 10 hodnocení – nese se v záloze.)</p>
-      <p><b>„Trochu umím"</b> se chová podobně, ale jen mírně: odstup roste pomalu a s nízkým stropem (<b>2 → 3 → 4 → 6 dní</b>), aby slovo, které umíš jen částečně, zůstalo v časté rotaci, dokud ho nezvládneš.</p>
-      <p><b>Rovnoměrné protáčení:</b> když máš hodně slov s podobnou váhou, appka upřednostní to, které jsi <b>nejdéle neviděl</b> – posuzuje to relativně vůči zrovna procvičované zásobě, takže to funguje stejně, ať se učíš hodinu v kuse nebo 10 minut dvakrát týdně. Místo náhodného opakování stejných pár slov tak postupně projdeš všechna; nová a dlouho neviděná mají přednost.</p>
+      <p><b>Jak se počítají rozestupy:</b> appka nepočítá ve dnech, ale v <b>počtu prošlých slovíček</b> – takže je jedno, jestli se učíš denně nebo nárazově. Každé slovo se vrátí, až mezi tím projde určitý počet jiných slovíček, a tenhle odstup se postupně prodlužuje, jak slovo zvládáš.</p>
+      <p><b>Neumím</b> se vrátí brzy (pár slovíček). <b>Trochu umím</b> zůstává v časté rotaci. <b>Umím</b> má rostoucí odstup (např. po ~20 → 40 → 80 … slovíčkách); <b>prodlouží se ale jen tehdy, když slovo skutečně dozrálo</b> – tedy vrátilo se po odsezeném odstupu a tys ho dal správně. Když ho dáš správně moc brzy (hned v tom samém procvičování), odstup se nenafoukne. Tím se nestane, že by nové slovo během chvíle „proletělo" do dlouhého intervalu, i když ho zatím pořádně neumíš.</p>
+      <p>Jakmile dáš Neumím/Trochu, slovo spadne zpět na krátký odstup. <b>Datum</b> u slova slouží jen k určení priority (co nejdéle nehodnocené má přednost), ne k tomu, kdy se objeví. Rozestupy si můžeš nastavit posuvníky v <b>Nastavení</b>.</p>
 
       <h3>Statistika a Nastavení</h3>
       <p>Statistika ukazuje počty a vývoj v čase pro aktuální jazyk. V Nastavení vyladíš chování učení (jak rychle se vrací neznámá slova, jak často se míchají kategorie).</p>
@@ -523,6 +522,9 @@ function migrateWord(w){
   if(!Array.isArray(w.sections)) w.sections=[];
   if(typeof w.streak!=='number') w.streak=0;        // consecutive "Umím" count
   if(!Array.isArray(w.history)) w.history=[];        // last results: {b:box, t:timestamp}, max 10
+  if(typeof w.level!=='number') w.level=0;           // spacing level (drives count-based gap)
+  if(typeof w.nextAt!=='number') w.nextAt=0;         // due when global review counter >= nextAt
+  if(typeof w.seenAt!=='number') w.seenAt=0;         // counter value when last shown
   return w;
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();}
@@ -644,7 +646,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v79';
+const APP_VER='v80';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -935,7 +937,7 @@ function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.foreign
 function openWordInCards(id){
   const w=words.find(x=>x.id===id);if(!w)return;
   ['translate','list','learn','stats','settings','guide'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
-  reviewedThisSession=0;hardStreak=0;sessionAll=false;queue=[];flipped=false;
+  reviewedThisSession=0;hardStreak=0;sessionAll=false;flipped=false;
   document.getElementById('learnEmpty').classList.add('hidden');
   document.getElementById('learnNothingDue').classList.add('hidden');
   document.getElementById('learnDone').classList.add('hidden');
@@ -944,7 +946,7 @@ function openWordInCards(id){
   document.body.classList.remove('list-locked');
   document.body.classList.add('learn-locked');
   renderSecBar('learnSecBar',learnSectionSel,'learn');
-  currentCard=w;showCard();
+  currentCard=w;currentWasDue = nReviews >= (w.nextAt||0);showCard();
 }
 let editSections=[];
 function renderEditSecChips(){
@@ -1017,12 +1019,12 @@ async function exportWords(){
       +'KROK 1 (zahájení): Hned po nahrání souboru – i když uživatel nic nenapíše – ho pozdrav, jednou větou řekni, že mu pomůžeš přidat slovíčka, a zeptej se, jak je chce dodat: (a) fotka slovíček/slovníčku, (b) fotka textu (vytáhneš slovíčka z něj), (c) napsaná/nakopírovaná dvojice slovíček, (d) nakopírovaný text. Vyzvi ho, ať pošle zdroj. '
       +'KROK 2 (jazyk): Urči cílový jazyk nových slov. Výchozí je hodnota pole "defaultLang" (en=angličtina, de=němčina, es=španělština, it=italština, el=řečtina). Pokud zdroj jednoznačně ukazuje jiný jazyk nebo si ho uživatel přeje, použij ten. Když to není jasné, zeptej se. '
       +'KROK 3 (sekce): Zeptej se, kam slovíčka zařadit: (a) nová sekce – řekne název, ty přidáš do horního pole "sections" objekt {name, created: hodnota now_ms, lang: jazyk slov} a všem novým slovům dáš tento název do "sections"; (b) existující sekce – NABÍDNI mu výpis názvů sekcí z pole "sections" pro daný jazyk, ať si vybere, a použij PŘESNĚ stejný název (nezakládej duplikát); (c) bez sekce – "sections" necháš []. '
-      +'KROK 4 (zpracování): Ze zdroje vytáhni všechna smysluplná slovíčka. Jeden význam = jedno slovo "foreign" + český překlad "cs" (české poznáš podle diakritiky; chybí-li překlad, dopřelož). Každé nové slovíčko vytvoř podle "_schema": box vždy 1 (Neumím), lastReviewed null, "streak" 0, "history" [], do "added" i "due" zkopíruj číslo z "now_ms", "id" unikátní (např. now_ms + pořadí), "pron" a "pos" nech "" pokud je neznáš (u řečtiny a jiného nelatinkového písma doplň přepis výslovnosti do "pron"), "sections" podle KROKU 3. '
+      +'KROK 4 (zpracování): Ze zdroje vytáhni všechna smysluplná slovíčka. Jeden význam = jedno slovo "foreign" + český překlad "cs" (české poznáš podle diakritiky; chybí-li překlad, dopřelož). Každé nové slovíčko vytvoř podle "_schema": box vždy 1 (Neumím), lastReviewed null, "streak" 0, "history" [], "level" 0, "nextAt" 0, do "added" i "due" zkopíruj číslo z "now_ms", "id" unikátní (např. now_ms + pořadí), "pron" a "pos" nech "" pokud je neznáš (u řečtiny a jiného nelatinkového písma doplň přepis výslovnosti do "pron"), "sections" podle KROKU 3. '
       +'DŮLEŽITÉ – JEN PŘIDÁVEJ, NIKDY NEPŘEPISUJ: Tvým jediným úkolem je PŘIDAT nová slovíčka na KONEC pole "words". NESMÍŠ měnit, mazat, přepisovat ani přeskupovat žádný stávající záznam ve "words" (ani jeho box, sekce, id, nic). Stejně tak NESMÍŠ měnit "sections" (kromě přidání úplně nové sekce z KROKU 3) ani "settings" – ty zkopíruj beze změny. Duplicity NEŘEŠ – o to se postará sama aplikace při importu. Ty prostě přidej všechna slovíčka ze zdroje jako nové záznamy (box 1, sekce dle KROKU 3); pokud je některé už v seznamu, aplikace ho sama nezduplikuje. '
       +'VÍCE VÝZNAMŮ = VÍCE ZÁZNAMŮ: Pokud má slovo víc překladů/významů (oddělených čárkou, lomítkem, středníkem, slovem „nebo" apod.), NIKDY je nedávej do jednoho pole jako „nahrát, zaznamenat". Vytvoř SAMOSTATNÝ záznam pro KAŽDÝ význam – v poli "cs" i "foreign" smí být jen JEDEN význam (žádné čárky ani lomítka spojující významy). Příklad: „record = nahrát, zaznamenat" → DVA záznamy: {foreign:"record", cs:"nahrát"} a {foreign:"record", cs:"zaznamenat"}. Totéž když má víc variant cizí strana – každá dvojice je vlastní záznam. '
       +'KONTROLA FORMÁTU: Výstup musí být PLATNÝ JSON se STEJNOU strukturou jako vstup – stejná pole na nejvyšší úrovni, "words" je pole objektů, každý nový objekt má všechna pole z "_schema" (žádné nepřejmenuj, nevynech, nepřidávej navíc). Nic nerozbij, neořezávej, needituj uvozovky ani čísla u stávajících záznamů. Před odesláním si v duchu ověř, že JSON jde naparsovat. '
       +'KROK 5 (výstup): Vrať CELÝ upravený soubor jako JEDEN platný JSON (v bloku kódu, nic víc kolem). Pak uživateli řekni: 1) kolik slov jsi přidal a do jaké sekce, 2) ať si JSON ULOŽÍ jako soubor, 3) ať ho v aplikaci Slovíčka načte přes Sync (záložka Slovíčka → tlačítko Sync). ',
-    _schema:{lang:'en | de | es | it | el', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', streak:'0 (u nových)', history:'[] (u nových)', id:'unikátní číslo', sections:'pole názvů sekcí, např. ["Unit 5"] nebo [] '},
+    _schema:{lang:'en | de | es | it | el', cs:'české slovo', foreign:'cizí slovo', pron:'výslovnost nebo ""', pos:'slovní druh nebo ""', box:'1=Neumím, 2=Trochu umím, 3=Umím, 4=Naučeno už nenabízet (vždy 1 pro nová)', added:'čas v ms (zkopíruj now_ms)', due:'stejné jako added', lastReviewed:'null', streak:'0 (u nových)', history:'[] (u nových)', level:'0 (u nových)', nextAt:'0 (u nových)', id:'unikátní číslo', sections:'pole názvů sekcí, např. ["Unit 5"] nebo [] '},
     _schema_sekce:{name:'název sekce', created:'čas vzniku v ms (u nové sekce zkopíruj now_ms)', lang:'jazyk sekce: en|de|es|it|el'},
     now_ms:Date.now(),
     defaultLang:activeLang,
@@ -1083,6 +1085,9 @@ function mergeWords(incoming){
       lastReviewed:it.lastReviewed||null,
       streak: (typeof it.streak==='number' && it.streak>=0)?it.streak:0,
       history: Array.isArray(it.history)?it.history.slice(-10):[],
+      level: (typeof it.level==='number' && it.level>=0)?it.level:0,
+      nextAt: (typeof it.nextAt==='number' && it.nextAt>=0)?it.nextAt:0,
+      seenAt: (typeof it.seenAt==='number' && it.seenAt>=0)?it.seenAt:0,
       sections:Array.isArray(it.sections)?it.sections.map(String):[]
     };
     const unionSecs=(a,b)=>{const out=[...(a||[])];(b||[]).forEach(n=>{if(!out.some(x=>String(x).toLowerCase()===String(n).toLowerCase()))out.push(n);});return out;};
@@ -1156,45 +1161,37 @@ function syncWords(ev){
   reader.readAsText(file);
 }
 
-/* ---------- Learning (adaptive endless session over a Leitner base) ---------- */
-// Long-term schedule (days until offered again on following days), by category.
-const INTERVAL_DAYS={1:1,2:3,3:7};
-const UMIM_LADDER=[1,3,7,16,35,60];   // dní do dalšího nabídnutí podle počtu „Umím" za sebou
-const TROCHU_LADDER=[2,3,4,6];        // „Trochu umím" – jen mírný růst, nízký strop (zůstává v rotaci)
-function umimInterval(streak){ return UMIM_LADDER[Math.min(Math.max(1,streak)-1, UMIM_LADDER.length-1)]; }
-function trochuInterval(streak){ return TROCHU_LADDER[Math.min(Math.max(1,streak)-1, TROCHU_LADDER.length-1)]; }
-function consecTail(history,box){ let n=0; const h=history||[]; for(let i=h.length-1;i>=0;i--){ if(h[i] && h[i].b===box) n++; else break; } return n; }
+/* ---------- Learning (count-based spaced repetition) ----------
+   Rozestupy se měří v POČTU prošlých slovíček (ne ve dnech). Globální čítač nReviews
+   roste s každou ukázanou kartičkou; slovo je „na řadě", když nReviews >= word.nextAt.
+   Datum (lastReviewed) slouží jen k prioritě mezi slovy, ne k tomu, kdy se objeví. */
 const DAY_MS=86400000;
-// Session tuning
-// Adjustable learning parameters (editable in Nastavení)
-const SETTINGS_DEFAULTS={gapNeumim:3,gapSkoro:8,maxHard:2,wLearn:4,wAlmost:3,wKnown:2,sectionSort:'alpha'};
+const UMIM_MAXLEVEL=6;
+let nReviews = (function(){ try{ return parseInt(localStorage.getItem(KEY+'_nrev')||'0',10)||0; }catch(e){ return 0; } })();
+function saveNRev(){ try{ localStorage.setItem(KEY+'_nrev',String(nReviews)); }catch(e){} }
+function umimGap(level){
+  const base=settings.gapUmim||20, g=(settings.umimGrow||200)/100;
+  return Math.round(Math.min(base*Math.pow(g, Math.max(1,level)-1), 5000));
+}
+// Adjustable learning parameters (sliders in Nastavení)
+const SETTINGS_DEFAULTS={gapNeumim:3,gapTrochu:8,gapUmim:20,umimGrow:200,maxHard:2,sectionSort:'alpha'};
 const SETTING_DEFS=[
-  {key:'gapNeumim',label:'Návrat „Neumím"',desc:'Za kolik kartiček se znovu objeví slovíčko, které neumíš',min:1,max:15},
-  {key:'gapSkoro',label:'Návrat „Trochu umím"',desc:'Za kolik kartiček se znovu objeví slovíčko ohodnocené „Trochu umím"',min:2,max:30},
-  {key:'maxHard',label:'Max „Neumím" za sebou',desc:'Kolik těžkých kartiček smí jít po sobě, než přijde lehčí',min:1,max:6},
-  {key:'wLearn',label:'Váha „Neumím"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9},
-  {key:'wAlmost',label:'Váha „Trochu umím"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9},
-  {key:'wKnown',label:'Váha „Umím"',desc:'Vyšší číslo = nabízí se častěji. Rozhoduje poměr těchto tří vah.',min:1,max:9}
+  {key:'gapNeumim',label:'Návrat „Neumím"',desc:'Po kolika jiných slovíčkách se znovu objeví slovo, které neumíš',min:1,max:20,step:1},
+  {key:'gapTrochu',label:'Návrat „Trochu umím"',desc:'Po kolika slovíčkách se vrátí slovo „Trochu umím"',min:2,max:40,step:1},
+  {key:'gapUmim',label:'První odstup „Umím"',desc:'Po kolika slovíčkách se poprvé vrátí slovo, které jsi dal „Umím"',min:5,max:120,step:1},
+  {key:'umimGrow',label:'Prodlužování „Umím"',desc:'O kolik se odstup prodlouží po každém dalším „Umím" za sebou',min:110,max:300,step:10,fmt:'mult'},
+  {key:'maxHard',label:'Max „Neumím" za sebou',desc:'Kolik těžkých kartiček smí jít po sobě, než přijde lehčí',min:1,max:6,step:1}
 ];
 let settings={...SETTINGS_DEFAULTS};
 function loadSettings(){try{const s=JSON.parse(localStorage.getItem(KEY+'_settings')||'{}');settings={...SETTINGS_DEFAULTS,...s};}catch(e){settings={...SETTINGS_DEFAULTS};}}
 function saveSettings(){try{localStorage.setItem(KEY+'_settings',JSON.stringify(settings));}catch(e){}}
-const QUEUE_MIN=4, QUEUE_FILL=12;
-let queue=[];                // upcoming cards (references into words)
 let currentCard=null;            // currently shown card
 let flipped=false,learnDir='cs',reviewedThisSession=0,hardStreak=0,sessionAll=false;
 function animWord(){const el=document.getElementById('cardWord');el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
 function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
-  const now=Date.now();
-  let next=Infinity;
-  words.forEach(w=>{if(w.lang!==activeLang||w.box===4)return;const d=w.due||0; if(d>now && d<next) next=d;});
   const el=document.getElementById('nextDueText');
-  if(next===Infinity){el.textContent='Až přidáš nová slovíčka, objeví se tu.';return;}
-  const hours=Math.ceil((next-now)/3600000);
-  const txt = hours<24 ? ('za '+hours+' '+pl(hours,'hodinu','hodiny','hodin'))
-                       : ('za '+Math.ceil(hours/24)+' '+pl(Math.ceil(hours/24),'den','dny','dní'));
-  el.textContent='Další slovíčko bude na řadě '+txt+'.';
+  if(el) el.textContent='Pro tenhle jazyk (a vybranou sekci) tu nejsou žádná slovíčka k procvičení.';
 }
 function frontSide(w){return learnDir==='cs'?{label:'Česky',word:w.cs}:{label:LANGS[w.lang].adj,word:w.foreign};}
 function backSide(w){return learnDir==='cs'?{label:LANGS[w.lang].adj,word:w.foreign}:{label:'Česky',word:w.cs};}
@@ -1205,67 +1202,45 @@ function setLearnDir(d){
   if(currentCard) showCard(); // restart currentCard card from its front side
 }
 function sessionPool(){return words.filter(w=> w.lang===activeLang && (sessionAll ? true : w.box!==4) && passesSectionFilter(w,learnSectionSel));}
-function weightedPick(cands){
-  if(!cands.length)return null;
-  const now=Date.now();
-  // rotace nezávislá na tempu učení: seřaď podle „naposledy viděno" RELATIVNĚ v rámci aktuální zásoby
-  const times=cands.map(w=>w.lastReviewed||0);
-  const minT=Math.min.apply(null,times), maxT=Math.max.apply(null,times);
-  const span=maxT-minT;
-  let total=0;const ws=cands.map(w=>{
-    let wt;
-    if(w.box===1) wt=settings.wLearn;
-    else if(w.box===2) wt=settings.wAlmost;
-    else if(w.box===3) wt=settings.wKnown + Math.max(0, 3-(w.streak||0)); // čerstvé Umím (streak 1/2) ~ vyšší; pevné = základ
-    else wt=1;
-    wt=wt||1;
-    if((w.due||0)<=now)wt*=2;                       // po termínu → dvojnásobná šance
-    const rel = span>0 ? (maxT-(w.lastReviewed||0))/span : 0; // 0 = naposledy viděné, 1 = nejdéle neviděné / nové
-    wt*=1+rel;                                      // nejdéle neviděné až 2×, čerstvě viděné ~1× (relativně, ne na pevný čas)
-    total+=wt;return wt;
+// Pick the next card: prefer words that are "due" (counter passed nextAt),
+// prioritised by how overdue they are, then by oldest review date (date = priority only).
+function pickNext(pool){
+  if(!pool.length)return null;
+  const due=pool.filter(w=> nReviews >= (w.nextAt||0));
+  const usingDue=due.length>0;
+  let cands=(usingDue?due:pool).slice();
+  cands.sort((a,b)=>{
+    const oa = usingDue ? (nReviews-(a.nextAt||0)) : -((a.nextAt||0)-nReviews); // due: most overdue first; jinak nejblíž termínu
+    const ob = usingDue ? (nReviews-(b.nextAt||0)) : -((b.nextAt||0)-nReviews);
+    if(ob!==oa) return ob-oa;
+    return (a.lastReviewed||0)-(b.lastReviewed||0);   // pak nejdéle nehodnocené (datum = priorita)
   });
-  let r=Math.random()*total;
-  for(let i=0;i<cands.length;i++){r-=ws[i];if(r<=0)return cands[i];}
-  return cands[cands.length-1];
-}
-function refillQueue(target){
-  target=target||QUEUE_FILL;
-  const pool=sessionPool();let guard=0;
-  while(queue.length<target && guard<300){
-    guard++;
-    const avail=pool.filter(w=> w!==currentCard && queue.indexOf(w)<0);
-    if(!avail.length)break;
-    const pick=weightedPick(avail);if(!pick)break;
-    queue.push(pick);
+  // nepřetížit „Neumím" v řadě
+  if(hardStreak>=settings.maxHard){
+    const easy=cands.find(w=>w.box!==1);
+    if(easy) cands=[easy,...cands.filter(w=>w!==easy)];
   }
+  // špetka pestrosti mezi nejvýše prioritními
+  const topN=Math.min(3,cands.length);
+  return cands[Math.floor(Math.random()*topN)];
 }
-function insertSoon(w,gap){
-  queue=queue.filter(x=>x!==w);                 // avoid duplicates
-  if(queue.length < gap+1) refillQueue(Math.max(QUEUE_FILL, gap+2)); // doplň jiné kartičky dopředu, ať se w nevrátí hned
-  let pos=gap+(Math.floor(Math.random()*3)-1);  // jitter gap-1 .. gap+1
-  if(pos<1)pos=1; if(pos>queue.length)pos=queue.length;
-  queue.splice(pos,0,w);
-}
+let currentWasDue=false;
 function nextCard(){
-  if(queue.length<QUEUE_MIN) refillQueue();
-  if(!queue.length){currentCard=null;return false;}
-  let idx=0;
-  // never more than settings.maxHard "učím se" cards in a row → pull an easier one forward
-  if(hardStreak>=settings.maxHard && queue[0] && queue[0].box===1){
-    const j=queue.findIndex(w=>w.box!==1);
-    if(j>=0) idx=j;
-    else{
-      const easy=sessionPool().filter(w=>w.box!==1 && w!==currentCard && queue.indexOf(w)<0);
-      const e=weightedPick(easy); if(e){queue.unshift(e);idx=0;}
-    }
-  }
-  currentCard=queue.splice(idx,1)[0];
+  const all=sessionPool();
+  if(!all.length){currentCard=null;return false;}
+  const pool=all.length>1 ? all.filter(w=>w!==currentCard) : all; // nezopakuj stejné slovo hned (pokud není jediné)
+  const pick=pickNext(pool);
+  if(!pick){currentCard=null;return false;}
+  currentCard=pick;
+  currentWasDue = nReviews >= (currentCard.nextAt||0);
+  nReviews++; saveNRev();
+  currentCard.seenAt=nReviews;
   hardStreak = currentCard.box===1 ? hardStreak+1 : 0;
   return true;
 }
 function startLearn(forceAll){
   sessionAll=!!forceAll;
-  reviewedThisSession=0;hardStreak=0;queue=[];currentCard=null;flipped=false;
+  reviewedThisSession=0;hardStreak=0;currentCard=null;flipped=false;
   renderSecBar('learnSecBar',learnSectionSel,'learn');
   const noWords=words.length===0;
   const poolEmpty=sessionPool().length===0;
@@ -1274,7 +1249,7 @@ function startLearn(forceAll){
   document.getElementById('learnArea').classList.toggle('hidden', noWords || poolEmpty);
   document.getElementById('learnDone').classList.add('hidden');
   if(poolEmpty && !noWords) updateNextDueInfo();
-  if(!noWords && !poolEmpty){ refillQueue(); if(nextCard()) showCard(); }
+  if(!noWords && !poolEmpty){ if(nextCard()) showCard(); }
   updateLearnBar();
 }
 function updateLearnBar(){
@@ -1345,20 +1320,26 @@ function rate(box){
   const now=Date.now();
   if(!Array.isArray(real.history)) real.history=[];
   real.history.push({b:box,t:now}); if(real.history.length>10) real.history.shift();
-  real.streak = (box===3) ? (real.streak||0)+1 : 0;     // consecutive "Umím"; anything else resets
+  const wasDue=currentWasDue;
+  real.streak = (box===3) ? (real.streak||0)+1 : 0;
   real.box=box;
   real.lastReviewed=now;
-  real.due = box===4 ? (now+3650*DAY_MS)
-           : box===3 ? (now + umimInterval(real.streak)*DAY_MS)               // 1→3→7→16→35→60 dní
-           : box===2 ? (now + trochuInterval(consecTail(real.history,2))*DAY_MS) // 2→3→4→6 dní (mírně)
-           : (now + INTERVAL_DAYS[1]*DAY_MS);
+  if(box===1){                         // Neumím → zpět na začátek, krátký odstup
+    real.level=0;
+    real.nextAt=nReviews+(settings.gapNeumim||3);
+  }else if(box===2){                    // Trochu umím → drží se v rotaci
+    real.level=Math.min(real.level||0,1);
+    real.nextAt=nReviews+(settings.gapTrochu||8);
+  }else if(box===3){                    // Umím → úroveň povýší JEN když slovo dozrálo (vrátilo se po odstupu)
+    if(wasDue) real.level=Math.min((real.level||0)+1, UMIM_MAXLEVEL);
+    if((real.level||0)<1) real.level=1;
+    real.nextAt=nReviews+umimGap(real.level);
+  }else{                                // Naučeno → ven
+    real.level=UMIM_MAXLEVEL;
+    real.nextAt=nReviews+1000000;
+  }
   reviewedThisSession++;
   save();
-  // short-term behaviour within this endless session
-  if(box===1) insertSoon(real,settings.gapNeumim);              // neumím → comes back soon
-  else if(box===2) insertSoon(real,settings.gapSkoro);          // trochu → comes back later
-  else if(box===3 && real.streak<2) insertSoon(real,settings.gapSkoro*2); // čerstvé „Umím" → ještě jednou ověřit (dál ve frontě)
-  else queue=queue.filter(x=>x!==real);                         // pevné Umím / Naučeno → ze smyčky ven
   if(nextCard()) showCard(); else finishLearn();
 }
 function finishLearn(){
@@ -1479,19 +1460,21 @@ function renderStats(){
 /* ---------- Settings UI ---------- */
 function updateWeightInfo(){
   const el=document.getElementById('weightInfo');if(!el)return;
-  const a=settings.wLearn,b=settings.wAlmost,c=settings.wKnown,t=a+b+c;
-  const p=x=>Math.round(x/t*100);
-  el.innerHTML='Co znamenají váhy: z přibližně každých 100 nabídnutých kartiček bude '+
-    '<b>'+p(a)+'</b> z „Neumím", <b>'+p(b)+'</b> z „Trochu umím" a <b>'+p(c)+'</b> z „Umím".';
+  const base=settings.gapUmim||20, g=(settings.umimGrow||200)/100;
+  let v=base, seq=[];
+  for(let i=0;i<5;i++){ seq.push(Math.round(v)); v*=g; }
+  el.innerHTML='„Umím" se vrací po '+seq.join(' → ')+' … slovíčkách – čím spolehlivěji slovo umíš, tím řidčeji se nabízí. '
+    +'Rozestupy se počítají v <b>počtu prošlých slovíček</b>, ne ve dnech; datum slouží jen k prioritě.';
 }
+function fmtSetting(d,v){ return d.fmt==='mult' ? ('×'+(v/100).toFixed(1)) : String(v); }
 function renderSettings(){
   document.getElementById('settingsList').innerHTML=SETTING_DEFS.map(d=>
     '<div class="setrow">'+
       '<div class="info"><div class="lbl">'+d.label+'</div><div class="dsc">'+d.desc+'</div></div>'+
-      '<div class="stepper">'+
-        '<button onclick="changeSetting(\''+d.key+'\',-1)">−</button>'+
-        '<span class="val" id="set-'+d.key+'">'+settings[d.key]+'</span>'+
-        '<button onclick="changeSetting(\''+d.key+'\',1)">+</button>'+
+      '<div class="slider">'+
+        '<input type="range" min="'+d.min+'" max="'+d.max+'" step="'+(d.step||1)+'" value="'+settings[d.key]+'" '+
+          'oninput="setSetting(\''+d.key+'\',this.value)">'+
+        '<span class="val" id="set-'+d.key+'">'+fmtSetting(d,settings[d.key])+'</span>'+
       '</div>'+
     '</div>').join('');
   updateWeightInfo();
@@ -1542,12 +1525,12 @@ function deleteSection(name){
   listSectionSel.delete(name); learnSectionSel.delete(name); saveSecSel();
   saveSections(); save(); renderSectionMgr(); refreshSectionUIs(); toast('Sekce smazána');
 }
-function changeSetting(key,delta){
+function setSetting(key,value){
   const def=SETTING_DEFS.find(d=>d.key===key);if(!def)return;
-  let v=(settings[key]||0)+delta;
+  let v=parseInt(value,10); if(isNaN(v))v=def.min;
   if(v<def.min)v=def.min; if(v>def.max)v=def.max;
   settings[key]=v;saveSettings();
-  const el=document.getElementById('set-'+key);if(el)el.textContent=v;
+  const el=document.getElementById('set-'+key);if(el)el.textContent=fmtSetting(def,v);
   updateWeightInfo();
 }
 function resetSettings(){settings={...SETTINGS_DEFAULTS};saveSettings();renderSettings();toast('Obnoveno na výchozí');}
