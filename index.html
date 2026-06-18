@@ -257,7 +257,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v80</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v81</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -646,7 +646,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v80';
+const APP_VER='v81';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1202,26 +1202,30 @@ function setLearnDir(d){
   if(currentCard) showCard(); // restart currentCard card from its front side
 }
 function sessionPool(){return words.filter(w=> w.lang===activeLang && (sessionAll ? true : w.box!==4) && passesSectionFilter(w,learnSectionSel));}
-// Pick the next card: prefer words that are "due" (counter passed nextAt),
-// prioritised by how overdue they are, then by oldest review date (date = priority only).
+// Pick the next card.
+// KEY: among words that are "due" (counter passed nextAt), words you've ALREADY started
+// (lastReviewed set) come before never-seen words. Otherwise the pile of brand-new words
+// (all scheduled at counter 0 = "most overdue") would forever bury the words you just failed,
+// so nothing would ever repeat. New words are introduced only between reps of the active set.
 function pickNext(pool){
   if(!pool.length)return null;
   const due=pool.filter(w=> nReviews >= (w.nextAt||0));
-  const usingDue=due.length>0;
-  let cands=(usingDue?due:pool).slice();
-  cands.sort((a,b)=>{
-    const oa = usingDue ? (nReviews-(a.nextAt||0)) : -((a.nextAt||0)-nReviews); // due: most overdue first; jinak nejblíž termínu
-    const ob = usingDue ? (nReviews-(b.nextAt||0)) : -((b.nextAt||0)-nReviews);
-    if(ob!==oa) return ob-oa;
-    return (a.lastReviewed||0)-(b.lastReviewed||0);   // pak nejdéle nehodnocené (datum = priorita)
+  const seenDue=due.filter(w=> w.lastReviewed);   // už rozpracovaná slova, co dozrála → drilluj je
+  const newDue =due.filter(w=> !w.lastReviewed);  // úplně nová → zařadit postupně mezi opakováními
+  let cands;
+  if(seenDue.length){ cands=seenDue; }
+  else if(newDue.length){ cands=newDue; }
+  else { cands=pool.slice(); }                    // nic nedozrálo → vezmi nejblíž termínu
+  cands=cands.slice().sort((a,b)=>{
+    const na=(a.nextAt||0), nb=(b.nextAt||0);
+    if(na!==nb) return na-nb;                      // nejdéle čekající (nejmenší nextAt) první
+    return (a.lastReviewed||0)-(b.lastReviewed||0);// pak nejdéle nehodnocené (datum = priorita)
   });
-  // nepřetížit „Neumím" v řadě
-  if(hardStreak>=settings.maxHard){
+  if(hardStreak>=settings.maxHard){               // nepřetížit „Neumím" v řadě (pokud je co snazšího)
     const easy=cands.find(w=>w.box!==1);
-    if(easy) cands=[easy,...cands.filter(w=>w!==easy)];
+    if(easy) return easy;
   }
-  // špetka pestrosti mezi nejvýše prioritními
-  const topN=Math.min(3,cands.length);
+  const topN=Math.min(3,cands.length);            // špetka pestrosti mezi nejvýše prioritními
   return cands[Math.floor(Math.random()*topN)];
 }
 let currentWasDue=false;
