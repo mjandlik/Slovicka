@@ -258,7 +258,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v78</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v79</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -644,7 +644,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v78';
+const APP_VER='v79';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1241,6 +1241,7 @@ function refillQueue(target){
 }
 function insertSoon(w,gap){
   queue=queue.filter(x=>x!==w);                 // avoid duplicates
+  if(queue.length < gap+1) refillQueue(Math.max(QUEUE_FILL, gap+2)); // doplň jiné kartičky dopředu, ať se w nevrátí hned
   let pos=gap+(Math.floor(Math.random()*3)-1);  // jitter gap-1 .. gap+1
   if(pos<1)pos=1; if(pos>queue.length)pos=queue.length;
   queue.splice(pos,0,w);
