@@ -235,6 +235,12 @@
   .slider{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
   .advtoggle{display:block;width:100%;margin:2px 0 12px;padding:9px;background:transparent;border:1px dashed var(--line);border-radius:10px;color:var(--ink-soft);font:inherit;font-size:13px;cursor:pointer;}
   .advtoggle:active{background:var(--surface-2);}
+  .ovl{position:fixed;inset:0;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;z-index:60;padding:18px;}
+  .ovl-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;}
+  .ovl-card h3{margin:0 0 6px;font-family:'Fraunces',serif;font-size:21px;color:var(--ink);}
+  .ovl-card .fld{display:block;margin-top:12px;font-size:13px;color:var(--ink-soft);}
+  .ovl-card input,.ovl-card select{width:100%;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:15px;font-family:inherit;margin-top:4px;}
+  .ovl-card .row{display:flex;gap:10px;margin-top:16px;}
   .slider input[type=range]{width:118px;accent-color:var(--accent);}
   .slider .val{min-width:44px;text-align:right;font-family:'Fraunces',serif;font-size:18px;color:var(--ink);}
   .weightinfo{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:2px 0 16px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
@@ -259,7 +265,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v83</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v84</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -292,6 +298,7 @@
       <button class="btn ghost" style="margin:0;flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
       <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
     </div>
+    <button class="btn" style="margin:0 0 10px;" onclick="openNewWord()">➕ Nové slovíčko</button>
     <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:8px;">
     <div id="listStavBar" class="secbar"></div>
     <div id="listSecBar" class="secbar hidden"></div>
@@ -301,6 +308,23 @@
     </div>
     <div class="listcount"><span id="totalCount">0</span> slovíček</div>
     <div id="wordList"></div>
+    <div id="newWordModal" class="ovl hidden" onclick="if(event.target===this)closeNewWord()">
+      <div class="ovl-card">
+        <h3 id="nwTitle">Nové slovíčko</h3>
+        <label class="fld" id="nwForeignLbl">Cizí slovo</label>
+        <input type="text" id="nwForeign" autocomplete="off">
+        <label class="fld">Česky</label>
+        <input type="text" id="nwCs" autocomplete="off">
+        <label class="fld">Výslovnost (nepovinné)</label>
+        <input type="text" id="nwPron" autocomplete="off">
+        <label class="fld">Sekce</label>
+        <select id="nwSec"></select>
+        <div class="row">
+          <button class="btn ghost" style="margin:0;flex:1;" onclick="closeNewWord()">Zrušit</button>
+          <button class="btn" style="margin:0;flex:1;" onclick="saveNewWord()">Uložit</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ LEARNING ============ -->
@@ -416,7 +440,7 @@
       <p><b>Super funkce:</b> klepnutím přímo na <b>přeložené slovo</b> se toto slovo vloží jako nový vstup a hned se přeloží zpátky. Můžeš tak rychle „proklikávat" mezi jazyky a hledat přesný význam.</p>
 
       <h3>Slovíčka (seznam)</h3>
-      <p>Přehled uložených slov. Nahoře přepínáš, zda se zobrazuje napřed cizí slovo nebo české. Barevné rámečky filtrují podle fáze učení. U slova: 🔊 výslovnost, ⊘ naučeno / vrátit k učení, ✕ smazat. Klepnutím na slovo skočíš rovnou na jeho kartičku a můžeš ho upravit (✎).</p>
+      <p>Přehled uložených slov. Tlačítkem <b>➕ Nové slovíčko</b> nahoře přidáš slovo ručně (cizí slovo, český překlad, nepovinně výslovnost a sekci) – v jazyce, který máš zrovna zvolený. Nahoře dál přepínáš, zda se zobrazuje napřed cizí slovo nebo české. Barevné rámečky filtrují podle fáze učení. U slova: 🔊 výslovnost, ⊘ naučeno / vrátit k učení, ✕ smazat. Klepnutím na slovo skočíš rovnou na jeho kartičku a můžeš ho upravit (✎).</p>
       <p><b>Známá slova:</b> u slova v seznamu je značka <b>⊘</b>. Když je <b>šedá</b>, slovíčko se normálně procvičuje; ťuknutím ho přepneš na <b>Naučeno už nenabízet</b> a značka <b>zčervená</b>. Slovo zůstane v seznamu i v souboru (AI ho nepřidá znovu), ale přestane se nabízet v učení. Dalším ťuknutím (na červenou ⊘) ho vrátíš zpět k učení.</p>
 
       <h3>Učení</h3>
@@ -648,7 +672,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v83';
+const APP_VER='v84';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -832,10 +856,36 @@ function addEntry(lang,cs,foreign,pos,pron,section){
     if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
     return 'reset';
   }
-  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null,sections:secName?[secName]:[]});
+  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null,streak:0,history:[],level:0,nextAt:0,seenAt:0,sections:secName?[secName]:[]});
   save();
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
   return 'ok';
+}
+function openNewWord(){
+  document.getElementById('nwForeignLbl').textContent=LANGS[activeLang].name+' (cizí slovo)';
+  document.getElementById('nwForeign').value='';
+  document.getElementById('nwCs').value='';
+  document.getElementById('nwPron').value='';
+  const sel=document.getElementById('nwSec');
+  let html='<option value="">— bez sekce —</option>';
+  sectionsForLang(activeLang,true).forEach(s=>{ html+='<option value="'+esc(s.name)+'">'+esc(s.name)+'</option>'; });
+  html+='<option value="__new__">➕ nová sekce…</option>';
+  sel.innerHTML=html; sel.value='';
+  document.getElementById('newWordModal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('nwForeign').focus(),50);
+}
+function closeNewWord(){ document.getElementById('newWordModal').classList.add('hidden'); }
+function saveNewWord(){
+  const foreign=document.getElementById('nwForeign').value.trim();
+  const cs=document.getElementById('nwCs').value.trim();
+  const pron=document.getElementById('nwPron').value.trim();
+  if(!foreign||!cs){ toast('Vyplň cizí slovo i český překlad'); return; }
+  let sec=document.getElementById('nwSec').value;
+  if(sec==='__new__'){ sec=(prompt('Název nové sekce:')||'').trim(); if(!sec) sec=''; }
+  const r=addEntry(activeLang,cs,foreign,'',pron,sec);
+  closeNewWord();
+  renderList();
+  toast(r==='reset' ? 'Slovíčko už bylo ve slovníku → nastaveno na Neumím' : 'Slovíčko přidáno');
 }
 async function savePair(i){
   if(!current||!current.options)return;
