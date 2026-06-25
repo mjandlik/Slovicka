@@ -266,7 +266,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v86</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v87</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -351,6 +351,7 @@
         <span class="badge" id="cardBadge"></span>
         <button class="say" id="cardSay" onclick="event.stopPropagation();speakCard()">🔊</button>
         <button class="say" id="cardEditBtn" style="left:auto;right:12px;bottom:12px;top:auto;" onclick="event.stopPropagation();openCardEdit()">✎</button>
+        <button class="say" id="cardRetireBtn" style="right:auto;left:12px;bottom:12px;top:auto;" onclick="event.stopPropagation();retireCurrent()" title="Naučeno – už nenabízet">⊘</button>
         <span class="side-label" id="cardSide"></span>
         <span class="word" id="cardWord"></span>
         <span class="cardpron" id="cardPron"></span>
@@ -672,7 +673,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v86';
+const APP_VER='v87';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1386,6 +1387,14 @@ function renderCardPron(){
 function vimGap(strength){
   const base=settings.gapUmim||20, g=(settings.umimGrow||200)/100;
   return Math.round(Math.min(base*Math.pow(g, Math.max(1,strength)-1), 5000));
+}
+function retireCurrent(){
+  const w=currentCard; if(!w)return;
+  const real=words.find(x=>x.id===w.id)||w;
+  real.box=4; real.nextAt=nReviews+1000000; real.lastReviewed=Date.now();
+  save();
+  toast('Naučeno – už se nenabízí');
+  if(nextCard()) showCard(); else finishLearn();
 }
 function know(known){
   const w=currentCard; if(!w)return;
