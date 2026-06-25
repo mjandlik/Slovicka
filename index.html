@@ -266,7 +266,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v87</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v88</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -673,7 +673,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v87';
+const APP_VER='v88';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1000,7 +1000,7 @@ function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.foreign
 function openWordInCards(id){
   const w=words.find(x=>x.id===id);if(!w)return;
   ['translate','list','learn','stats','settings','guide'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
-  reviewedThisSession=0;hardStreak=0;sessionAll=false;flipped=false;
+  reviewedThisSession=0;hardStreak=0;sessionAll=false;flipped=false;activeIds=new Set([id]);
   document.getElementById('learnEmpty').classList.add('hidden');
   document.getElementById('learnNothingDue').classList.add('hidden');
   document.getElementById('learnDone').classList.add('hidden');
@@ -1269,12 +1269,15 @@ function sessionPool(){
     && passesSectionFilter(w,learnSectionSel)
     && (boxActive ? learnBoxSel.has(w.box) : (sessionAll ? true : w.box!==4)) );
 }
-// Pick the next card. Pořadí priorit:
-//  1) už VIDĚNÁ slova, kterým nastal termín (nextAt dozrál) – to jsou naplánovaná opakování:
-//     špatně zodpovězená se brzy vracejí (re-drill), správně zodpovězená postupují na vyšší sílu.
-//  2) když nic nedozrálo, zařaď JEDNO nové (ještě neviděné) slovo.
-//  3) jinak vezmi nejblíž termínu.
-// Tím se nestane, že by hromada nových slov (nextAt=0) napořád předbíhala to, cos právě procvičoval.
+let activeIds=new Set();   // pracovní sada právě procvičovaných slov (stíní před backlogem)
+// Pick the next card pomocí PRACOVNÍ SADY (activeIds), která stíní právě procvičovaná slova před backlogem.
+// Proč: máš stovky dříve naplánovaných slov (malý nextAt). Bez sady by slovo, kterému dáš „Nevím"
+// (nextAt = teď+3), bylo až ZA celým backlogem a vrátilo se po stovkách karet.
+// Pořadí:
+//  1) slova v aktivní sadě, kterým nastal termín → drilluj (špatná se brzy vracejí, dobrá postupují).
+//  2) když v sadě nic nedozrálo, přiber JEDNO slovo: nejdřív dozrálé z backlogu, pak nové.
+//  Sada nemá pevný strop – roste jen když není co dozrálého drillovat, takže se sama tempuje:
+//  když slova pleteš, drží se malá; když je umíš, postupně přibývají nová. Dozrálé (síla≥3) sadu opustí.
 function pickNext(pool){
   if(!pool.length)return null;
   if(learnBoxSel.size>0){
@@ -1283,14 +1286,19 @@ function pickNext(pool){
     const oldest=pool.filter(w=>(w.lastReviewed||0)===min);
     return oldest[Math.floor(Math.random()*oldest.length)];
   }
-  const seenDue=pool.filter(w=> w.lastReviewed && nReviews>=(w.nextAt||0)).sort((a,b)=>(a.nextAt||0)-(b.nextAt||0));
-  if(seenDue.length){
-    if(hardStreak>=settings.maxHard){ const easy=seenDue.find(w=>w.box!==1); if(easy) return easy; } // nepřetížit „Nevím" v řadě
-    return seenDue[Math.floor(Math.random()*Math.min(3,seenDue.length))];
+  const active=pool.filter(w=>activeIds.has(w.id));
+  const dueActive=active.filter(w=> nReviews>=(w.nextAt||0)).sort((a,b)=>(a.nextAt||0)-(b.nextAt||0));
+  if(dueActive.length){
+    if(hardStreak>=settings.maxHard){ const easy=dueActive.find(w=>w.box!==1); if(easy) return easy; } // nepřetížit „Nevím" v řadě
+    return dueActive[Math.floor(Math.random()*Math.min(3,dueActive.length))];
   }
-  const fresh=pool.filter(w=> !w.lastReviewed).sort((a,b)=>{ const na=(a.nextAt||0),nb=(b.nextAt||0); if(na!==nb)return na-nb; return (a.added||0)-(b.added||0); });
-  if(fresh.length) return fresh[Math.floor(Math.random()*Math.min(3,fresh.length))];
-  return pool.slice().sort((a,b)=>(a.nextAt||0)-(b.nextAt||0))[0];
+  // v sadě nic nedozrálo → přiber jedno slovo z venku
+  const out=pool.filter(w=>!activeIds.has(w.id));
+  const dueSeen=out.filter(w=> w.lastReviewed && nReviews>=(w.nextAt||0)).sort((a,b)=>(a.nextAt||0)-(b.nextAt||0));
+  const fresh=out.filter(w=> !w.lastReviewed).sort((a,b)=>{ const na=(a.nextAt||0),nb=(b.nextAt||0); if(na!==nb)return na-nb; return (a.added||0)-(b.added||0); });
+  let cand = dueSeen[0] || fresh[0] || (active.slice().sort((a,b)=>(a.nextAt||0)-(b.nextAt||0))[0]) || out.slice().sort((a,b)=>(a.nextAt||0)-(b.nextAt||0))[0];
+  if(cand) activeIds.add(cand.id);
+  return cand;
 }
 let currentWasDue=false;
 function nextCard(){
@@ -1308,7 +1316,7 @@ function nextCard(){
 }
 function startLearn(forceAll){
   sessionAll=!!forceAll;
-  reviewedThisSession=0;hardStreak=0;currentCard=null;flipped=false;
+  reviewedThisSession=0;hardStreak=0;currentCard=null;flipped=false;activeIds=new Set();
   renderLearnStavBar();
   renderSecBar('learnSecBar',learnSectionSel,'learn');
   const noWords=words.length===0;
@@ -1392,6 +1400,7 @@ function retireCurrent(){
   const w=currentCard; if(!w)return;
   const real=words.find(x=>x.id===w.id)||w;
   real.box=4; real.nextAt=nReviews+1000000; real.lastReviewed=Date.now();
+  activeIds.delete(real.id);
   save();
   toast('Naučeno – už se nenabízí');
   if(nextCard()) showCard(); else finishLearn();
@@ -1409,11 +1418,13 @@ function know(known){
     real.streak=(real.streak||0)+1;
     real.box = (real.strength>=3) ? 3 : 2;           // stav se odvodí ze síly
     real.nextAt = nReviews + vimGap(real.strength);
+    if(real.strength>=3) activeIds.delete(real.id);  // dozrálé slovo opouští pracovní sadu → uvolní místo novému
   }else{
     real.strength=Math.max(0,(real.strength||0)-2);  // měkký propad (ne na nulu) → rychlejší zotavení
     real.streak=0;
     real.box=1;                                       // „právě jsem nevěděl" → Neumím
     real.nextAt = nReviews + (settings.gapNeumim||3); // krátký odstup → re-drill v pracovní sadě
+    activeIds.add(real.id);                            // zůstává v sadě → brzy se vrátí
   }
   real.lastReviewed=now;
   reviewedThisSession++;
