@@ -141,6 +141,8 @@
   }
   .item .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
   .item .lvlbadge{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;font-size:10px;font-weight:700;flex:0 0 auto;line-height:1;}
+  .item .lvlpair{display:flex;flex-direction:column;gap:2px;flex:0 0 auto;}
+  .item .lvlpair .lvb{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:1px 5px;border-radius:7px;font-size:9px;font-weight:700;line-height:1.35;white-space:nowrap;}
   .item .txt{flex:1;min-width:0;cursor:pointer;}
   .item .say-sm{flex:0 0 auto;background:transparent;border:none;color:var(--ink-soft);font-size:18px;cursor:pointer;padding:4px 6px;}
   .item .en{font-size:16px;font-weight:600;}
@@ -197,6 +199,7 @@
   .r-learn{background:var(--c-learn);} .r-almost{background:var(--c-almost);color:#2a1c00;} .r-known{background:var(--c-known);}
   .rate .r-flip{flex:0 0 52px;width:52px;height:52px;padding:0;border-radius:50%;background:var(--surface-2);color:var(--ink-soft);border:1px solid #4a443c;font-size:22px;font-weight:400;}
   .rate .r-flip:active{background:#4a443c;}
+  .rate .r-flip .flipglyph{display:block;line-height:1;transform:translateY(1px);}
 
   .progress{text-align:center;color:var(--ink-soft);font-size:13px;margin-bottom:14px;}
 
@@ -268,7 +271,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v91</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v92</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -345,8 +348,8 @@
     <div id="learnArea" class="hidden">
       <div class="dir" id="learnDirRow" style="margin-bottom:14px;">
         <button id="ldA" onclick="setLearnDir('fw')">Anglicky → Česky</button>
-        <button id="ldB" class="on" onclick="setLearnDir('cs')">Česky → Anglicky</button>
-        <button id="ldC" onclick="setLearnDir('rnd')">Náhodně</button>
+        <button id="ldB" onclick="setLearnDir('cs')">Česky → Anglicky</button>
+        <button id="ldC" class="on" onclick="setLearnDir('auto')">Automaticky</button>
       </div>
       <div id="learnScroll">
       <div class="progress" id="learnProgress"></div>
@@ -450,8 +453,8 @@
       <p><b>Známá slova:</b> u slova v seznamu je značka <b>⊘</b>. Když je <b>šedá</b>, slovíčko se normálně procvičuje; ťuknutím ho přepneš na <b>Naučeno už nenabízet</b> a značka <b>zčervená</b>. Slovo zůstane v seznamu i v souboru (AI ho nepřidá znovu), ale přestane se nabízet v učení. Dalším ťuknutím (na červenou ⊘) ho vrátíš zpět k učení.</p>
 
       <h3>Učení</h3>
-      <p>Nekonečné procvičování kartiček s dvěma tlačítky: <b>Nevím</b> / <b>Vím</b> – odpovídáš jen, jestli to slovo víš právě teď. „Jak dobře to umíš" si appka dopočítá sama z toho, jak ti to jde v čase. Nahoře si můžeš <b>vyfiltrovat skupinu podle stavu</b> (Vše / Neumím / Trochu umím / Umím / Naučeno) – třeba si zopakovat jen to, co „Umím"; v tom případě se nabízí <b>podle data posledního učení</b> (nejdéle neopakované první, shoda náhodně). Ťuknutím kartičku otočíš. Směr (česky → cizí / opačně / <b>Náhodně</b>) přepneš nahoře – při „Náhodně" se u každé kartičky vylosuje směr. Výslovnost se ukáže na cizí straně, slovo upravíš tužkou <b>✎</b>. „Naučeno už nenabízet" nastavíš v seznamu značkou ⊘.</p>
-      <p><b>Indikátor stavu:</b> u každého slova (v seznamu i na kartičce) je malé <b>číslo = síla zvládnutí</b>, barevně podle fáze (červená Neumím → oranžová Trochu → zelená Umím). Roste s každým „Vím" po dozrání, klesá při „Nevím".</p>
+      <p>Nekonečné procvičování kartiček s dvěma tlačítky: <b>Nevím</b> / <b>Vím</b> – odpovídáš jen, jestli to slovo víš právě teď. „Jak dobře to umíš" si appka dopočítá sama z toho, jak ti to jde v čase. Nahoře si můžeš <b>vyfiltrovat skupinu podle stavu</b> (Vše / Neumím / Trochu umím / Umím / Naučeno) – třeba si zopakovat jen to, co „Umím"; v tom případě se nabízí <b>podle data posledního učení</b> (nejdéle neopakované první, shoda náhodně). Ťuknutím (nebo kulatým ↻) kartičku otočíš. Nahoře přepínáš směr: <b>Česky → cizí</b>, <b>cizí → Česky</b>, nebo <b>Automaticky</b>. Při „Automaticky" se appka snaží naučit slovo <b>oběma směry</b> – každý směr má vlastní učící křivku a nabízí se férově oba (zhruba 50:50). Výslovnost se ukáže na cizí straně, slovo upravíš tužkou <b>✎</b>. „Naučeno už nenabízet" nastavíš v seznamu značkou ⊘ (vyřadí slovo v obou směrech).</p>
+      <p><b>Indikátor stavu:</b> u každého slova jsou v seznamu dvě malá čísla – <b>Cz</b> (síla ve směru česky→cizí) a <b>ciz</b> (cizí→česky), barevně podle fáze (červená Neumím → oranžová Trochu → zelená Umím). Na kartičce vidíš sílu právě procvičovaného směru. Číslo roste s každým „Vím" po dozrání, klesá při „Nevím".</p>
       <p><b>Jak se počítají rozestupy:</b> appka nepočítá ve dnech, ale v <b>počtu prošlých slovíček</b>, takže je jedno, jestli se učíš denně nebo nárazově. <b>Nevím</b> → slovo se vrátí brzy (pár slovíček) a chvíli se drilluje. <b>Vím</b> → odstup roste (např. ~20 → 40 → 80 …), ale <b>jen když slovo dozrálo</b> (vrátilo se po odstupu); když dáš Vím moc brzy, odstup se nenafoukne. Když u zažitého slova jednou dáš Nevím, nespadne úplně na začátek – <b>měkký propad</b> ho vrátí o kus zpět, takže se rychleji zotaví. Rozestupy nastavíš posuvníky v <b>Nastavení</b> (Spád učení, nebo Pokročilé).</p>
       <h3>Statistika a Nastavení</h3>
       <p>Statistika ukazuje počty a vývoj v čase pro aktuální jazyk. V Nastavení vyladíš chování učení (jak rychle se vrací neznámá slova, jak často se míchají kategorie).</p>
@@ -502,7 +505,7 @@
 <div id="learnBar" class="hidden">
   <div class="rate" id="rateRow">
     <button class="r-learn" onclick="know(false)">Nevím</button>
-    <button class="r-flip" onclick="flipCard()" title="Otočit kartičku" aria-label="Otočit kartičku">↻</button>
+    <button class="r-flip" onclick="flipCard()" title="Otočit kartičku" aria-label="Otočit kartičku"><span class="flipglyph">↻</span></button>
     <button class="r-known" onclick="know(true)">Vím</button>
   </div>
 </div>
@@ -556,6 +559,20 @@ function migrateWord(w){
   if(typeof w.seenAt!=='number') w.seenAt=0;         // counter value when last shown
   if(typeof w.strength!=='number') w.strength={1:0,2:1,3:3,4:3}[w.box]||0; // Nevím/Vím model: síla zvládnutí
   if(typeof w.ease!=='number') w.ease=2.0;           // (rezerva pro budoucí ladění obtížnosti)
+  // Dvě nezávislé učící křivky na slovo: 'cs' (česky→cizí) a 'fw' (cizí→česky).
+  if(!w.dir || typeof w.dir!=='object'){
+    const seed={strength:w.strength||0, box:w.box||1, nextAt:w.nextAt||0, lastReviewed:(w.lastReviewed!=null?w.lastReviewed:null), streak:w.streak||0, history:Array.isArray(w.history)?w.history.slice():[]};
+    w.dir={ cs:Object.assign({},seed,{history:seed.history.slice()}), fw:Object.assign({},seed,{history:seed.history.slice()}) }; // oba zdědí stávající postup
+  }
+  ['cs','fw'].forEach(dr=>{ const s=w.dir[dr];
+    if(!s||typeof s!=='object'){ w.dir[dr]={strength:0,box:1,nextAt:0,lastReviewed:null,streak:0,history:[]}; return; }
+    if(typeof s.strength!=='number') s.strength=0;
+    if(typeof s.box!=='number') s.box=1;
+    if(typeof s.nextAt!=='number') s.nextAt=0;
+    if(!('lastReviewed' in s)) s.lastReviewed=null;
+    if(typeof s.streak!=='number') s.streak=0;
+    if(!Array.isArray(s.history)) s.history=[];
+  });
   return w;
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();}
@@ -677,7 +694,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v91';
+const APP_VER='v92';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -861,7 +878,8 @@ function addEntry(lang,cs,foreign,pos,pron,section){
     if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
     return 'reset';
   }
-  words.unshift({id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null,streak:0,history:[],level:0,strength:0,ease:2.0,nextAt:0,seenAt:0,sections:secName?[secName]:[]});
+  const nw={id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null,streak:0,history:[],level:0,strength:0,ease:2.0,nextAt:0,seenAt:0,sections:secName?[secName]:[]};
+  migrateWord(nw); words.unshift(nw);
   save();
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
   return 'ok';
@@ -911,7 +929,7 @@ async function savePair(i){
       const cl=(cs||'').trim().toLowerCase();
       const sec=currentSaveSection?ensureSection(L,currentSaveSection):'';
       let n=0;
-      words.forEach(w=>{ if(w.lang===L && w.cs.toLowerCase()===cl){ w.box=1; w.due=Date.now(); if(sec){ if(!Array.isArray(w.sections))w.sections=[]; if(!w.sections.some(s=>String(s).toLowerCase()===sec.toLowerCase())) w.sections.push(sec); } n++; } });
+      words.forEach(w=>{ if(w.lang===L && w.cs.toLowerCase()===cl){ DIRS.forEach(dr=>{const s=dst(w,dr);s.box=1;s.strength=0;s.nextAt=0;}); if(sec){ if(!Array.isArray(w.sections))w.sections=[]; if(!w.sections.some(s=>String(s).toLowerCase()===sec.toLowerCase())) w.sections.push(sec); } n++; } });
       if(n){ save(); optSaved[i].add(L); }
     }else{
       try{
@@ -976,7 +994,7 @@ function renderList(){
   const qEl=document.getElementById('listSearch');
   const q=qEl?stripDia(qEl.value):'';
   const coll=new Intl.Collator('cs',{sensitivity:'base'});
-  const shown=d.filter(w=>boxFilter[w.box] && passesSectionFilter(w,listSectionSel) && (!q || stripDia(w.foreign).includes(q)||stripDia(w.cs).includes(q)))
+  const shown=d.filter(w=>(boxFilter[dst(w,'cs').box]||boxFilter[dst(w,'fw').box]) && passesSectionFilter(w,listSectionSel) && (!q || stripDia(w.foreign).includes(q)||stripDia(w.cs).includes(q)))
     .sort((a,b)=>coll.compare(listLang==='fw'?a.foreign:a.cs, listLang==='fw'?b.foreign:b.cs));
   document.getElementById('totalCount').textContent=shown.length;
   if(!shown.length){list.innerHTML='<div class="empty-note">Nic nenalezeno.</div>';return;}
@@ -987,10 +1005,12 @@ function renderList(){
     const csLine='<div class="cs">'+esc(w.cs)+'</div>';
     const primary = listLang==='fw'?fwLine:csLine;
     const secondary = listLang==='fw'?csLine:fwLine;
-    const retired = w.box===4;
+    const cs=dst(w,'cs'), fw=dst(w,'fw');
+    const retired = cs.box===4 && fw.box===4;
     const stopBtn = '<button class="say-sm stopbtn'+(retired?' active':'')+'" title="'+(retired?'Vrátit k učení':'Naučeno – už nenabízet')+'" onclick="'+(retired?'reviveWord':'retireWord')+'('+w.id+')">⊘</button>';
+    const pill=(lbl,s)=>'<span class="lvb" style="background:'+BOXVAR[s.box]+';color:'+(s.box===2?'#2a1c00':'#f0e6d8')+'">'+lbl+' '+(s.strength||0)+'</span>';
     return '<div class="item">'+
-      '<span class="lvlbadge" title="Síla zvládnutí" style="background:'+BOXVAR[w.box]+';color:'+(w.box===2?'#2a1c00':'#f0e6d8')+'">'+(w.strength||0)+'</span>'+
+      '<span class="lvlpair" title="Síla zvládnutí (Cz→cizí / cizí→Cz)">'+pill('Cz',cs)+pill('ciz',fw)+'</span>'+
       '<div class="txt" onclick="openWordInCards('+w.id+')">'+primary+secondary+'</div>'+
       '<button class="say-sm" onclick="speakWordById('+w.id+')">🔊</button>'+
       stopBtn+
@@ -998,13 +1018,15 @@ function renderList(){
     '</div>';
   }).join('');
 }
-function retireWord(id){const w=words.find(x=>x.id===id);if(w){w.box=4;w.nextAt=nReviews+1000000;w.lastReviewed=Date.now();save();renderList();toast('Umím – už se nenabízí');}}
-function reviveWord(id){const w=words.find(x=>x.id===id);if(w){w.box=1;w.strength=0;w.nextAt=0;save();renderList();toast('Vráceno k učení');}}
+function retireWord(id){const w=words.find(x=>x.id===id);if(w){DIRS.forEach(dr=>{const s=dst(w,dr);s.box=4;s.nextAt=nReviews+1000000;s.lastReviewed=Date.now();activeIds.delete(cardKey(w,dr));});save();renderList();toast('Umím – už se nenabízí');}}
+function reviveWord(id){const w=words.find(x=>x.id===id);if(w){DIRS.forEach(dr=>{const s=dst(w,dr);s.box=1;s.strength=0;s.nextAt=0;});save();renderList();toast('Vráceno k učení');}}
 function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.foreign, LANGS[w.lang].tts);}
 function openWordInCards(id){
   const w=words.find(x=>x.id===id);if(!w)return;
   ['translate','list','learn','stats','settings','guide'].forEach(x=>{document.getElementById('view-'+x).classList.toggle('hidden',x!=='learn');document.getElementById('nav-'+x).classList.toggle('on',x==='learn');});
-  reviewedThisSession=0;hardStreak=0;sessionAll=false;flipped=false;activeIds=new Set([id]);
+  reviewedThisSession=0;hardStreak=0;sessionAll=false;flipped=false;dirShown={cs:0,fw:0};
+  currentDir = (learnDir==='fw') ? 'fw' : 'cs';   // jaký směr otevřít (u Automaticky začni česky)
+  activeIds=new Set([cardKey(w,currentDir)]);
   document.getElementById('learnEmpty').classList.add('hidden');
   document.getElementById('learnNothingDue').classList.add('hidden');
   document.getElementById('learnDone').classList.add('hidden');
@@ -1014,7 +1036,7 @@ function openWordInCards(id){
   document.body.classList.add('learn-locked');
   renderLearnStavBar();
   renderSecBar('learnSecBar',learnSectionSel,'learn');
-  currentCard=w;currentWasDue = nReviews >= (w.nextAt||0);showCard();
+  currentCard=w;currentWasDue = nReviews >= (dst(w,currentDir).nextAt||0);showCard();
 }
 let editSections=[];
 function renderEditSecChips(){
@@ -1158,8 +1180,10 @@ function mergeWords(incoming){
       ease: (typeof it.ease==='number' && it.ease>0)?it.ease:2.0,
       nextAt: (typeof it.nextAt==='number' && it.nextAt>=0)?it.nextAt:0,
       seenAt: (typeof it.seenAt==='number' && it.seenAt>=0)?it.seenAt:0,
+      dir: (it.dir && typeof it.dir==='object')?it.dir:undefined,
       sections:Array.isArray(it.sections)?it.sections.map(String):[]
     };
+    migrateWord(norm);  // zajistí dir.cs/dir.fw (z importu nebo ze starých polí)
     const unionSecs=(a,b)=>{const out=[...(a||[])];(b||[]).forEach(n=>{if(!out.some(x=>String(x).toLowerCase()===String(n).toLowerCase()))out.push(n);});return out;};
     const k=keyOf(norm);
     if(!map.has(k)){map.set(k,norm);added++;}
@@ -1168,11 +1192,13 @@ function mergeWords(incoming){
       const before=(cur.sections||[]).length;
       const secs=unionSecs(cur.sections,norm.sections);
       const grew=secs.length>before;
-      if((norm.lastReviewed||0) > (cur.lastReviewed||0)){
+      const newLR=Math.max(dst(norm,'cs').lastReviewed||0, dst(norm,'fw').lastReviewed||0);
+      const curLR=Math.max(dst(cur,'cs').lastReviewed||0, dst(cur,'fw').lastReviewed||0);
+      if(newLR > curLR){
         map.set(k,{...norm, id:cur.id, added:Math.min(cur.added||norm.added, norm.added||cur.added), sections:secs});
       }else{
         cur.sections=secs;
-        if(grew && norm.box===1){ cur.box=1; cur.due=Date.now(); } // re-import into a new section → back to Neumím
+        if(grew && dst(norm,'cs').box===1){ DIRS.forEach(dr=>{const s=dst(cur,dr);s.box=1;s.strength=0;s.nextAt=0;}); } // re-import do nové sekce → zpět na Neumím
       }
     }
   });
@@ -1251,81 +1277,99 @@ const SETTING_DEFS=[
 let settings={...SETTINGS_DEFAULTS};
 function loadSettings(){try{const s=JSON.parse(localStorage.getItem(KEY+'_settings')||'{}');settings={...SETTINGS_DEFAULTS,...s};}catch(e){settings={...SETTINGS_DEFAULTS};}}
 function saveSettings(){try{localStorage.setItem(KEY+'_settings',JSON.stringify(settings));}catch(e){}}
-let currentCard=null;            // currently shown card
-let flipped=false,learnDir='cs',cardDir='cs',reviewedThisSession=0,hardStreak=0,sessionAll=false;
+let currentCard=null;            // currently shown word
+let currentDir='cs';             // direction of the current card ('cs' = česky→cizí, 'fw' = cizí→česky)
+let flipped=false,learnDir='auto',reviewedThisSession=0,hardStreak=0,sessionAll=false;
+const DIRS=['cs','fw'];
+function cardKey(w,dir){return w.id+':'+dir;}
+function dst(w,dir){ return (w.dir&&w.dir[dir]) ? w.dir[dir] : {strength:0,box:1,nextAt:0,lastReviewed:null,streak:0,history:[]}; }
 function animWord(){const el=document.getElementById('cardWord');el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
 function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
   const el=document.getElementById('nextDueText');
   if(el) el.textContent='Pro tenhle jazyk (a vybranou sekci) tu nejsou žádná slovíčka k procvičení.';
 }
-function frontSide(w){return cardDir==='cs'?{label:'Česky',word:w.cs}:{label:LANGS[w.lang].adj,word:w.foreign};}
-function backSide(w){return cardDir==='cs'?{label:LANGS[w.lang].adj,word:w.foreign}:{label:'Česky',word:w.cs};}
+function frontSide(w){return currentDir==='cs'?{label:'Česky',word:w.cs}:{label:LANGS[w.lang].adj,word:w.foreign};}
+function backSide(w){return currentDir==='cs'?{label:LANGS[w.lang].adj,word:w.foreign}:{label:'Česky',word:w.cs};}
 function setLearnDir(d){
   learnDir=d;
   document.getElementById('ldA').classList.toggle('on',d==='fw');
   document.getElementById('ldB').classList.toggle('on',d==='cs');
-  const lc=document.getElementById('ldC'); if(lc) lc.classList.toggle('on',d==='rnd');
-  if(currentCard) showCard(); // restart currentCard card from its front side
+  const lc=document.getElementById('ldC'); if(lc) lc.classList.toggle('on',d==='auto');
+  startLearn(sessionAll); // změna směru mění množinu karet → restart session
 }
-function sessionPool(){
+// Karty = (slovo × směr). „Automaticky" jede obě křivky; pevné cs/fw jen tu jednu.
+function sessionCards(){
   const boxActive=learnBoxSel.size>0;
-  return words.filter(w=> w.lang===activeLang
-    && passesSectionFilter(w,learnSectionSel)
-    && (boxActive ? learnBoxSel.has(w.box) : (sessionAll ? true : w.box!==4)) );
+  const dirs = (learnDir==='cs')?['cs'] : (learnDir==='fw')?['fw'] : ['cs','fw'];
+  const out=[];
+  for(const w of words){
+    if(w.lang!==activeLang) continue;
+    if(!passesSectionFilter(w,learnSectionSel)) continue;
+    for(const dr of dirs){
+      const st=dst(w,dr);
+      if(boxActive){ if(!learnBoxSel.has(st.box)) continue; }
+      else { if(!sessionAll && st.box===4) continue; }
+      out.push({w,dir:dr,st});
+    }
+  }
+  return out;
 }
-let activeIds=new Set();   // pracovní sada právě procvičovaných slov (stíní před backlogem)
-// Pick the next card pomocí PRACOVNÍ SADY (activeIds), která stíní právě procvičovaná slova před backlogem.
-// Proč: máš stovky dříve naplánovaných slov (malý nextAt). Bez sady by slovo, kterému dáš „Nevím"
-// (nextAt = teď+3), bylo až ZA celým backlogem a vrátilo se po stovkách karet.
-// Pořadí:
-//  1) slova v aktivní sadě, kterým nastal termín → drilluj (špatná se brzy vracejí, dobrá postupují).
-//  2) když v sadě nic nedozrálo, přiber JEDNO slovo: nejdřív dozrálé z backlogu, pak nové.
-//  Sada nemá pevný strop – roste jen když není co dozrálého drillovat, takže se sama tempuje:
-//  když slova pleteš, drží se malá; když je umíš, postupně přibývají nová. Dozrálé (síla≥3) sadu opustí.
-function pickNext(pool){
-  if(!pool.length)return null;
+let activeIds=new Set();    // pracovní sada karet (klíč w.id:dir) – stíní drily před backlogem
+let dirShown={cs:0,fw:0};   // férovost směrů v rámci session (kolik karet daného směru padlo)
+// Výběr další karty: pracovní sada stíní drily před backlogem; když v sadě nic nedozrálo,
+// přibere se JEDNA karta z venku, FÉROVĚ – přednost má směr, který v session zaostává (méně zobrazení).
+function pickNext(cards){
+  if(!cards.length)return null;
   if(learnBoxSel.size>0){
-    // režim „skupina podle stavu" → priorita podle data posledního učení (nejstarší první), shoda náhodně
-    let min=Infinity; pool.forEach(w=>{ const t=w.lastReviewed||0; if(t<min)min=t; });
-    const oldest=pool.filter(w=>(w.lastReviewed||0)===min);
+    // skupina podle stavu → priorita podle data posledního učení (nejstarší první), shoda náhodně
+    let min=Infinity; cards.forEach(c=>{ const t=c.st.lastReviewed||0; if(t<min)min=t; });
+    const oldest=cards.filter(c=>(c.st.lastReviewed||0)===min);
     return oldest[Math.floor(Math.random()*oldest.length)];
   }
-  const active=pool.filter(w=>activeIds.has(w.id));
-  const dueActive=active.filter(w=> nReviews>=(w.nextAt||0)).sort((a,b)=>(a.nextAt||0)-(b.nextAt||0));
+  const active=cards.filter(c=>activeIds.has(cardKey(c.w,c.dir)));
+  const dueActive=active.filter(c=> nReviews>=(c.st.nextAt||0)).sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0));
   if(dueActive.length){
-    if(hardStreak>=settings.maxHard){ const easy=dueActive.find(w=>w.box!==1); if(easy) return easy; } // nepřetížit „Nevím" v řadě
+    if(hardStreak>=settings.maxHard){ const easy=dueActive.find(c=>c.st.box!==1); if(easy) return easy; } // nepřetížit „Nevím" v řadě
     return dueActive[Math.floor(Math.random()*Math.min(3,dueActive.length))];
   }
-  // v sadě nic nedozrálo → přiber jedno slovo z venku
-  const out=pool.filter(w=>!activeIds.has(w.id));
-  const dueSeen=out.filter(w=> w.lastReviewed && nReviews>=(w.nextAt||0)).sort((a,b)=>(a.nextAt||0)-(b.nextAt||0));
-  const fresh=out.filter(w=> !w.lastReviewed).sort((a,b)=>{ const na=(a.nextAt||0),nb=(b.nextAt||0); if(na!==nb)return na-nb; return (a.added||0)-(b.added||0); });
-  let cand = dueSeen[0] || fresh[0] || (active.slice().sort((a,b)=>(a.nextAt||0)-(b.nextAt||0))[0]) || out.slice().sort((a,b)=>(a.nextAt||0)-(b.nextAt||0))[0];
-  if(cand) activeIds.add(cand.id);
-  return cand;
+  const out=cards.filter(c=>!activeIds.has(cardKey(c.w,c.dir)));
+  let usable=out.filter(c=> (c.st.lastReviewed && nReviews>=(c.st.nextAt||0)) || !c.st.lastReviewed );
+  if(!usable.length) usable=out;
+  if(usable.length){
+    usable.sort((a,b)=>{
+      if(dirShown[a.dir]!==dirShown[b.dir]) return dirShown[a.dir]-dirShown[b.dir]; // férovost směrů
+      const sa=a.st.lastReviewed?0:1, sb=b.st.lastReviewed?0:1; if(sa!==sb) return sa-sb; // dozrálé z backlogu před úplně novými
+      return (a.st.nextAt||0)-(b.st.nextAt||0);
+    });
+    const c=usable[0]; activeIds.add(cardKey(c.w,c.dir)); return c;
+  }
+  if(active.length) return active.slice().sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0))[0];
+  return cards.slice().sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0))[0];
 }
 let currentWasDue=false;
 function nextCard(){
-  const all=sessionPool();
+  const all=sessionCards();
   if(!all.length){currentCard=null;return false;}
-  const pool=all.length>1 ? all.filter(w=>w!==currentCard) : all; // nezopakuj stejné slovo hned (pokud není jediné)
+  let pool=all.filter(c=> c.w!==currentCard);                 // nezopakuj stejné SLOVO hned (ani druhý směr)
+  if(!pool.length) pool=all.filter(c=> !(c.w===currentCard && c.dir===currentDir)); // jen jedno slovo → pusť druhý směr
+  if(!pool.length) pool=all;
   const pick=pickNext(pool);
   if(!pick){currentCard=null;return false;}
-  currentCard=pick;
-  currentWasDue = nReviews >= (currentCard.nextAt||0);
+  currentCard=pick.w; currentDir=pick.dir;
+  currentWasDue = nReviews >= (pick.st.nextAt||0);
   nReviews++; saveNRev();
-  currentCard.seenAt=nReviews;
-  hardStreak = currentCard.box===1 ? hardStreak+1 : 0;
+  dirShown[currentDir]=(dirShown[currentDir]||0)+1;
+  hardStreak = pick.st.box===1 ? hardStreak+1 : 0;
   return true;
 }
 function startLearn(forceAll){
   sessionAll=!!forceAll;
-  reviewedThisSession=0;hardStreak=0;currentCard=null;flipped=false;activeIds=new Set();
+  reviewedThisSession=0;hardStreak=0;currentCard=null;flipped=false;activeIds=new Set();dirShown={cs:0,fw:0};
   renderLearnStavBar();
   renderSecBar('learnSecBar',learnSectionSel,'learn');
   const noWords=words.length===0;
-  const poolEmpty=sessionPool().length===0;
+  const poolEmpty=sessionCards().length===0;
   document.getElementById('learnEmpty').classList.toggle('hidden', !noWords);
   document.getElementById('learnNothingDue').classList.toggle('hidden', !(poolEmpty && !noWords));
   document.getElementById('learnArea').classList.toggle('hidden', noWords || poolEmpty);
@@ -1345,7 +1389,6 @@ function updateLearnBar(){
 }
 function showCard(){
   if(!currentCard)return;
-  cardDir = (learnDir==='rnd') ? (Math.random()<0.5?'cs':'fw') : learnDir; // náhodný směr se losuje jednou na kartu
   flipped=false;
   const w=currentCard;
   const front=frontSide(w);
@@ -1359,8 +1402,9 @@ function showCard(){
   renderCardPron();
   document.getElementById('cardHint').classList.remove('hidden');
   const badge=document.getElementById('cardBadge');
-  badge.textContent=BOXNAME[w.box]+' · '+(w.strength||0);badge.style.background=BOXVAR[w.box];
-  badge.style.color=w.box===2?'#2a1c00':'#f0e6d8';
+  const cst=dst(w,currentDir);
+  badge.textContent=BOXNAME[cst.box]+' · '+(cst.strength||0);badge.style.background=BOXVAR[cst.box];
+  badge.style.color=cst.box===2?'#2a1c00':'#f0e6d8';
   document.getElementById('cardEditPanel').classList.add('hidden');
   document.getElementById('exampleBox').classList.add('hidden');
   document.getElementById('examples').innerHTML='';
@@ -1389,7 +1433,7 @@ function flipCard(){
   }
 }
 // Pronunciation is shown only on the foreign side; tap to add/edit.
-function showingForeign(){return currentCard && (((cardDir==='fw')&&!flipped)||((cardDir==='cs')&&flipped));}
+function showingForeign(){return currentCard && (((currentDir==='fw')&&!flipped)||((currentDir==='cs')&&flipped));}
 function renderCardPron(){
   const el=document.getElementById('cardPron');if(!el)return;
   const p=showingForeign()?currentCard.pron:'';
@@ -1405,8 +1449,7 @@ function vimGap(strength){
 function retireCurrent(){
   const w=currentCard; if(!w)return;
   const real=words.find(x=>x.id===w.id)||w;
-  real.box=4; real.nextAt=nReviews+1000000; real.lastReviewed=Date.now();
-  activeIds.delete(real.id);
+  DIRS.forEach(dr=>{ const s=dst(real,dr); s.box=4; s.nextAt=nReviews+1000000; s.lastReviewed=Date.now(); activeIds.delete(cardKey(real,dr)); });
   save();
   toast('Naučeno – už se nenabízí');
   if(nextCard()) showCard(); else finishLearn();
@@ -1414,25 +1457,26 @@ function retireCurrent(){
 function know(known){
   const w=currentCard; if(!w)return;
   const real=words.find(x=>x.id===w.id)||w;
+  const st=dst(real,currentDir); if(real.dir) real.dir[currentDir]=st;
   const now=Date.now();
-  if(!Array.isArray(real.history)) real.history=[];
-  real.history.push({b:known?'v':'n',t:now}); if(real.history.length>10) real.history.shift();
+  if(!Array.isArray(st.history)) st.history=[];
+  st.history.push({b:known?'v':'n',t:now}); if(st.history.length>10) st.history.shift();
   const wasDue=currentWasDue;
   if(known){
-    if(wasDue) real.strength=(real.strength||0)+1;   // povýší jen když slovo dozrálo (pojistka proti nafouknutí)
-    if((real.strength||0)<1) real.strength=1;
-    real.streak=(real.streak||0)+1;
-    real.box = (real.strength>=3) ? 3 : 2;           // stav se odvodí ze síly
-    real.nextAt = nReviews + vimGap(real.strength);
-    if(real.strength>=3) activeIds.delete(real.id);  // dozrálé slovo opouští pracovní sadu → uvolní místo novému
+    if(wasDue) st.strength=(st.strength||0)+1;        // povýší jen když dozrálo (pojistka proti nafouknutí)
+    if((st.strength||0)<1) st.strength=1;
+    st.streak=(st.streak||0)+1;
+    st.box = (st.strength>=3) ? 3 : 2;                // stav směru se odvodí ze síly
+    st.nextAt = nReviews + vimGap(st.strength);
+    if(st.strength>=3) activeIds.delete(cardKey(real,currentDir));  // dozrálá karta opouští sadu
   }else{
-    real.strength=Math.max(0,(real.strength||0)-2);  // měkký propad (ne na nulu) → rychlejší zotavení
-    real.streak=0;
-    real.box=1;                                       // „právě jsem nevěděl" → Neumím
-    real.nextAt = nReviews + (settings.gapNeumim||3); // krátký odstup → re-drill v pracovní sadě
-    activeIds.add(real.id);                            // zůstává v sadě → brzy se vrátí
+    st.strength=Math.max(0,(st.strength||0)-2);       // měkký propad
+    st.streak=0;
+    st.box=1;
+    st.nextAt = nReviews + (settings.gapNeumim||3);    // krátký odstup → re-drill
+    activeIds.add(cardKey(real,currentDir));           // zůstává v sadě
   }
-  real.lastReviewed=now;
+  st.lastReviewed=now;
   reviewedThisSession++;
   save();
   if(nextCard()) showCard(); else finishLearn();
@@ -1515,23 +1559,20 @@ function svgChart(opts){
 }
 function renderStats(){
   const d=deck();
-  const total=d.length;
-  const known=d.filter(w=>w.box>=3).length;
-  const learning=d.filter(w=>w.box<=2).length;
-  const pct=total?Math.round(known/total*100):0;
-  const empty=total===0;
+  const cards=[]; d.forEach(w=>DIRS.forEach(dr=>cards.push(dst(w,dr)))); // obě křivky dohromady
+  const total=cards.length;
+  const empty=d.length===0;
   document.getElementById('statEmpty').classList.toggle('hidden',!empty);
   document.getElementById('statNums').classList.toggle('hidden',empty);
   document.getElementById('statCharts').classList.toggle('hidden',empty);
   if(empty){document.getElementById('statNums').innerHTML='';document.getElementById('statCharts').innerHTML='';return;}
-  const cc={1:0,2:0,3:0,4:0};d.forEach(w=>cc[w.box]=(cc[w.box]||0)+1);
-  const wkNow=weekStart(Date.now());
+  const cc={1:0,2:0,3:0,4:0};cards.forEach(s=>cc[s.box]=(cc[s.box]||0)+1);
   document.getElementById('statNums').innerHTML=
     '<div class="numcard"><b style="color:var(--c-learn)">'+cc[1]+'</b><span>Neumím</span></div>'+
     '<div class="numcard"><b style="color:var(--c-almost)">'+cc[2]+'</b><span>Trochu umím</span></div>'+
     '<div class="numcard"><b style="color:var(--c-known)">'+cc[3]+'</b><span>Umím</span></div>'+
     '<div class="numcard"><b style="color:var(--c-done)">'+cc[4]+'</b><span>Naučeno</span></div>'+
-    '<div class="numcard"><b>'+total+'</b><span>celkem</span></div>';
+    '<div class="numcard"><b>'+d.length+'</b><span>slov ('+total+' směrů)</span></div>';
   const addedTs=d.map(w=>w.added||Date.now());
   const minTs=Math.min.apply(null,addedTs), maxTs=Date.now();
   const weeks=weekList(minTs,maxTs);
@@ -1541,14 +1582,14 @@ function renderStats(){
   d.forEach(w=>{const k=weekStart(w.added||Date.now());if(k in idx)newPer[idx[k]]++;});
   const cumTotal=[];newPer.reduce((a,v,i)=>cumTotal[i]=a+v,0);
   const knownPer=weeks.map(()=>0);
-  d.filter(w=>w.box>=3).forEach(w=>{const k=weekStart(w.lastReviewed||w.added||Date.now());if(k in idx)knownPer[idx[k]]++;});
+  cards.filter(s=>s.box>=3).forEach(s=>{const k=weekStart(s.lastReviewed||Date.now());if(k in idx)knownPer[idx[k]]++;});
   const cumKnown=[];knownPer.reduce((a,v,i)=>cumKnown[i]=a+v,0);
   document.getElementById('statCharts').innerHTML=
     '<div class="chartcard"><h3>Nová slovíčka po týdnech</h3><p class="sub">kolik jsi přidal každý týden</p>'+
       svgChart({type:'bar',labels:labels,series:[{values:newPer,color:'var(--accent)'}]})+'</div>'+
     '<div class="chartcard"><h3>Celkem slovíček</h3><p class="sub">jak roste tvoje slovní zásoba</p>'+
       svgChart({type:'line',labels:labels,series:[{values:cumTotal,color:'var(--accent)',fill:true}]})+'</div>'+
-    '<div class="chartcard"><h3>Umím v čase</h3><p class="sub">slovíčka ve fázi „Umím" a „Naučeno"</p>'+
+    '<div class="chartcard"><h3>Umím v čase</h3><p class="sub">směry ve fázi „Umím" a „Naučeno" (oba směry dohromady)</p>'+
       svgChart({type:'line',labels:labels,series:[{values:cumKnown,color:'var(--c-known)',fill:true}]})+'</div>';
 }
 
