@@ -195,6 +195,8 @@
   .rate button{flex:1;border:none;border-radius:13px;padding:14px 6px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;color:#fff;display:flex;flex-direction:column;gap:3px;align-items:center;}
   .rate small{font-weight:500;opacity:.85;font-size:11px;}
   .r-learn{background:var(--c-learn);} .r-almost{background:var(--c-almost);color:#2a1c00;} .r-known{background:var(--c-known);}
+  .rate .r-flip{flex:0 0 auto;aspect-ratio:1/1;width:auto;padding:0;border-radius:50%;background:var(--surface-2);color:var(--ink-soft);border:1px solid #4a443c;font-size:22px;font-weight:400;}
+  .rate .r-flip:active{background:#4a443c;}
 
   .progress{text-align:center;color:var(--ink-soft);font-size:13px;margin-bottom:14px;}
 
@@ -266,7 +268,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v89</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v90</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -500,6 +502,7 @@
 <div id="learnBar" class="hidden">
   <div class="rate" id="rateRow">
     <button class="r-learn" onclick="know(false)">Nevím</button>
+    <button class="r-flip" onclick="flipCard()" title="Otočit kartičku" aria-label="Otočit kartičku">↻</button>
     <button class="r-known" onclick="know(true)">Vím</button>
   </div>
 </div>
@@ -674,7 +677,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v89';
+const APP_VER='v90';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
