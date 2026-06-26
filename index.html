@@ -271,7 +271,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v92</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v93</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -694,7 +694,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v92';
+const APP_VER='v93';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1267,8 +1267,9 @@ let nReviews = (function(){ try{ return parseInt(localStorage.getItem(KEY+'_nrev
 function saveNRev(){ try{ localStorage.setItem(KEY+'_nrev',String(nReviews)); }catch(e){} }
 // Adjustable learning parameters (sliders in Nastavení)
 const PACE_BASE={gapNeumim:3,gapUmim:20}; // poměr, který „Spád" proporčně škáluje
-const SETTINGS_DEFAULTS={pace:100,gapNeumim:3,gapUmim:20,umimGrow:200,maxHard:2,sectionSort:'alpha'};
+const SETTINGS_DEFAULTS={pace:100,gapNeumim:3,gapUmim:20,umimGrow:200,maxHard:2,workSet:8,sectionSort:'alpha'};
 const SETTING_DEFS=[
+  {key:'workSet',label:'Pestrost rotace',desc:'Kolik různých kartiček se při učení drží naráz (víc = pestřejší a náročnější, míň = jednodušší)',min:4,max:24,step:1},
   {key:'gapNeumim',label:'Návrat „Nevím"',desc:'Po kolika jiných slovíčkách se vrátí slovo, které jsi nevěděl',min:1,max:20,step:1},
   {key:'gapUmim',label:'První odstup „Vím"',desc:'Po kolika slovíčkách se poprvé vrátí slovo, které jsi věděl',min:5,max:120,step:1},
   {key:'umimGrow',label:'Prodlužování „Vím"',desc:'O kolik se odstup prodlouží po každém dalším „Vím" za sebou',min:110,max:300,step:10,fmt:'mult'},
@@ -1329,20 +1330,23 @@ function pickNext(cards){
   }
   const active=cards.filter(c=>activeIds.has(cardKey(c.w,c.dir)));
   const dueActive=active.filter(c=> nReviews>=(c.st.nextAt||0)).sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0));
-  if(dueActive.length){
-    if(hardStreak>=settings.maxHard){ const easy=dueActive.find(c=>c.st.box!==1); if(easy) return easy; } // nepřetížit „Nevím" v řadě
-    return dueActive[Math.floor(Math.random()*Math.min(3,dueActive.length))];
-  }
   const out=cards.filter(c=>!activeIds.has(cardKey(c.w,c.dir)));
-  let usable=out.filter(c=> (c.st.lastReviewed && nReviews>=(c.st.nextAt||0)) || !c.st.lastReviewed );
-  if(!usable.length) usable=out;
-  if(usable.length){
+  // Dokud je v rotaci málo kartiček, přiber další (i když je co opakovat) → pestřejší dril,
+  // ne jen ping-pong dvou slov. Strop „dozrálo nic" platí pořád. workSet = cílová velikost rotace.
+  const wantNew = activeIds.size < (settings.workSet||8);
+  if((wantNew || !dueActive.length) && out.length){
+    let usable=out.filter(c=> (c.st.lastReviewed && nReviews>=(c.st.nextAt||0)) || !c.st.lastReviewed );
+    if(!usable.length) usable=out;
     usable.sort((a,b)=>{
       if(dirShown[a.dir]!==dirShown[b.dir]) return dirShown[a.dir]-dirShown[b.dir]; // férovost směrů
       const sa=a.st.lastReviewed?0:1, sb=b.st.lastReviewed?0:1; if(sa!==sb) return sa-sb; // dozrálé z backlogu před úplně novými
       return (a.st.nextAt||0)-(b.st.nextAt||0);
     });
     const c=usable[0]; activeIds.add(cardKey(c.w,c.dir)); return c;
+  }
+  if(dueActive.length){
+    if(hardStreak>=settings.maxHard){ const easy=dueActive.find(c=>c.st.box!==1); if(easy) return easy; } // nepřetížit „Nevím" v řadě
+    return dueActive[Math.floor(Math.random()*Math.min(3,dueActive.length))];
   }
   if(active.length) return active.slice().sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0))[0];
   return cards.slice().sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0))[0];
