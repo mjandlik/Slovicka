@@ -266,7 +266,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v88</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v89</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -344,6 +344,7 @@
       <div class="dir" id="learnDirRow" style="margin-bottom:14px;">
         <button id="ldA" onclick="setLearnDir('fw')">Anglicky → Česky</button>
         <button id="ldB" class="on" onclick="setLearnDir('cs')">Česky → Anglicky</button>
+        <button id="ldC" onclick="setLearnDir('rnd')">Náhodně</button>
       </div>
       <div id="learnScroll">
       <div class="progress" id="learnProgress"></div>
@@ -447,7 +448,7 @@
       <p><b>Známá slova:</b> u slova v seznamu je značka <b>⊘</b>. Když je <b>šedá</b>, slovíčko se normálně procvičuje; ťuknutím ho přepneš na <b>Naučeno už nenabízet</b> a značka <b>zčervená</b>. Slovo zůstane v seznamu i v souboru (AI ho nepřidá znovu), ale přestane se nabízet v učení. Dalším ťuknutím (na červenou ⊘) ho vrátíš zpět k učení.</p>
 
       <h3>Učení</h3>
-      <p>Nekonečné procvičování kartiček s dvěma tlačítky: <b>Nevím</b> / <b>Vím</b> – odpovídáš jen, jestli to slovo víš právě teď. „Jak dobře to umíš" si appka dopočítá sama z toho, jak ti to jde v čase. Nahoře si můžeš <b>vyfiltrovat skupinu podle stavu</b> (Vše / Neumím / Trochu umím / Umím / Naučeno) – třeba si zopakovat jen to, co „Umím"; v tom případě se nabízí <b>podle data posledního učení</b> (nejdéle neopakované první, shoda náhodně). Ťuknutím kartičku otočíš. Směr (česky → cizí / opačně) přepneš nahoře, výslovnost se ukáže na cizí straně, slovo upravíš tužkou <b>✎</b>. „Naučeno už nenabízet" nastavíš v seznamu značkou ⊘.</p>
+      <p>Nekonečné procvičování kartiček s dvěma tlačítky: <b>Nevím</b> / <b>Vím</b> – odpovídáš jen, jestli to slovo víš právě teď. „Jak dobře to umíš" si appka dopočítá sama z toho, jak ti to jde v čase. Nahoře si můžeš <b>vyfiltrovat skupinu podle stavu</b> (Vše / Neumím / Trochu umím / Umím / Naučeno) – třeba si zopakovat jen to, co „Umím"; v tom případě se nabízí <b>podle data posledního učení</b> (nejdéle neopakované první, shoda náhodně). Ťuknutím kartičku otočíš. Směr (česky → cizí / opačně / <b>Náhodně</b>) přepneš nahoře – při „Náhodně" se u každé kartičky vylosuje směr. Výslovnost se ukáže na cizí straně, slovo upravíš tužkou <b>✎</b>. „Naučeno už nenabízet" nastavíš v seznamu značkou ⊘.</p>
       <p><b>Indikátor stavu:</b> u každého slova (v seznamu i na kartičce) je malé <b>číslo = síla zvládnutí</b>, barevně podle fáze (červená Neumím → oranžová Trochu → zelená Umím). Roste s každým „Vím" po dozrání, klesá při „Nevím".</p>
       <p><b>Jak se počítají rozestupy:</b> appka nepočítá ve dnech, ale v <b>počtu prošlých slovíček</b>, takže je jedno, jestli se učíš denně nebo nárazově. <b>Nevím</b> → slovo se vrátí brzy (pár slovíček) a chvíli se drilluje. <b>Vím</b> → odstup roste (např. ~20 → 40 → 80 …), ale <b>jen když slovo dozrálo</b> (vrátilo se po odstupu); když dáš Vím moc brzy, odstup se nenafoukne. Když u zažitého slova jednou dáš Nevím, nespadne úplně na začátek – <b>měkký propad</b> ho vrátí o kus zpět, takže se rychleji zotaví. Rozestupy nastavíš posuvníky v <b>Nastavení</b> (Spád učení, nebo Pokročilé).</p>
       <h3>Statistika a Nastavení</h3>
@@ -673,7 +674,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v88';
+const APP_VER='v89';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1248,19 +1249,20 @@ let settings={...SETTINGS_DEFAULTS};
 function loadSettings(){try{const s=JSON.parse(localStorage.getItem(KEY+'_settings')||'{}');settings={...SETTINGS_DEFAULTS,...s};}catch(e){settings={...SETTINGS_DEFAULTS};}}
 function saveSettings(){try{localStorage.setItem(KEY+'_settings',JSON.stringify(settings));}catch(e){}}
 let currentCard=null;            // currently shown card
-let flipped=false,learnDir='cs',reviewedThisSession=0,hardStreak=0,sessionAll=false;
+let flipped=false,learnDir='cs',cardDir='cs',reviewedThisSession=0,hardStreak=0,sessionAll=false;
 function animWord(){const el=document.getElementById('cardWord');el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
 function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
   const el=document.getElementById('nextDueText');
   if(el) el.textContent='Pro tenhle jazyk (a vybranou sekci) tu nejsou žádná slovíčka k procvičení.';
 }
-function frontSide(w){return learnDir==='cs'?{label:'Česky',word:w.cs}:{label:LANGS[w.lang].adj,word:w.foreign};}
-function backSide(w){return learnDir==='cs'?{label:LANGS[w.lang].adj,word:w.foreign}:{label:'Česky',word:w.cs};}
+function frontSide(w){return cardDir==='cs'?{label:'Česky',word:w.cs}:{label:LANGS[w.lang].adj,word:w.foreign};}
+function backSide(w){return cardDir==='cs'?{label:LANGS[w.lang].adj,word:w.foreign}:{label:'Česky',word:w.cs};}
 function setLearnDir(d){
   learnDir=d;
   document.getElementById('ldA').classList.toggle('on',d==='fw');
   document.getElementById('ldB').classList.toggle('on',d==='cs');
+  const lc=document.getElementById('ldC'); if(lc) lc.classList.toggle('on',d==='rnd');
   if(currentCard) showCard(); // restart currentCard card from its front side
 }
 function sessionPool(){
@@ -1340,6 +1342,7 @@ function updateLearnBar(){
 }
 function showCard(){
   if(!currentCard)return;
+  cardDir = (learnDir==='rnd') ? (Math.random()<0.5?'cs':'fw') : learnDir; // náhodný směr se losuje jednou na kartu
   flipped=false;
   const w=currentCard;
   const front=frontSide(w);
@@ -1383,7 +1386,7 @@ function flipCard(){
   }
 }
 // Pronunciation is shown only on the foreign side; tap to add/edit.
-function showingForeign(){return currentCard && (((learnDir==='fw')&&!flipped)||((learnDir==='cs')&&flipped));}
+function showingForeign(){return currentCard && (((cardDir==='fw')&&!flipped)||((cardDir==='cs')&&flipped));}
 function renderCardPron(){
   const el=document.getElementById('cardPron');if(!el)return;
   const p=showingForeign()?currentCard.pron:'';
