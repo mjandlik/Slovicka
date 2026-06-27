@@ -271,7 +271,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v95</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v96</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -694,7 +694,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v95';
+const APP_VER='v96';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1319,7 +1319,7 @@ let dirShown={cs:0,fw:0};   // férovost směrů v rámci session (kolik karet d
 // Výběr další karty: pracovní sada stíní drily před backlogem; když v sadě nic nedozrálo,
 // přibere se JEDNA karta z venku, FÉROVĚ – přednost má směr, který v session zaostává (méně zobrazení).
 /* ===== Plánovač „míra naučení" (time-based, spec v0.2) ===== */
-const SCH={MIN_M:10,INIT_M:30,GRAD:86400,LEARN_ACTIVE:600,G_MIN:2.0,G_MAX:4.0,LAPSE:0.35,M_CAP:360*86400,TRICKLE:25,OPENER:8};
+const SCH={MIN_M:10,INIT_M:30,GRAD:86400,LEARN_ACTIVE:600,G_MIN:2.0,G_MAX:4.0,LAPSE:0.35,RELEARN:30,M_CAP:360*86400,TRICKLE:25,OPENER:8};
 const MIG_M={0:60,1:1200,2:14400,3:172800,4:864000};
 function nowSec(){return Math.floor(Date.now()/1000);}
 function retK(){let r=(settings.retention||85)/100; if(r<0.6)r=0.6; if(r>0.95)r=0.95; return Math.log(r)/Math.log(0.9);}
@@ -1354,7 +1354,7 @@ function schGrade(real,dir,known,intensive){
     else if(matured||intensive) st.m=Math.min(SCH.M_CAP, st.m*(SCH.G_MIN+(SCH.G_MAX-SCH.G_MIN)*(1-R)));
     st.strength=(st.strength||0)+(matured?1:0); if((st.strength||0)<1)st.strength=1; st.streak=(st.streak||0)+1;
   }else{
-    st.m = seen ? Math.max(SCH.MIN_M, st.m*SCH.LAPSE) : SCH.MIN_M;
+    st.m = seen ? Math.max(SCH.MIN_M, Math.min(st.m*SCH.LAPSE, SCH.RELEARN)) : SCH.MIN_M;
     st.strength=Math.max(0,(st.strength||0)-2); st.streak=0;
   }
   st.revAt=now; st.lastReviewed=Date.now();
@@ -1369,8 +1369,8 @@ function pickNext(cards){
   if(!cards.length)return null;
   const focused=(typeof learnSectionSel!=='undefined' && learnSectionSel && learnSectionSel.size>0);
   // 1) UČENÍ po termínu → nejbližší dueAt
-  let best=null,bd=Infinity;
-  for(const c of cards){ const st=c.st; if(schDue(st)&&st.m<SCH.GRAD){ const d=schDueAt(st); if(d<bd){bd=d;best=c;} } }
+  let best=null;
+  for(const c of cards){ const st=c.st; if(schDue(st)&&st.m<SCH.GRAD){ if(!best||st.m<best.st.m||(st.m===best.st.m&&schDueAt(st)<schDueAt(best.st))) best=c; } }
   if(best) return best;
   // 2) nové slovo — brána pracovní sady NEBO trickle; nejnovější přidané první
   const activeW=new Set();
