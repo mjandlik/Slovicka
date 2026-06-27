@@ -271,7 +271,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v97</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v94</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -493,7 +493,7 @@
         <li>Appku vyvinul <b>Claude</b> (AI od Anthropicu) ve spolupráci s autorem.</li>
         <li>Je to <b>jeden samostatný HTML soubor</b> – HTML, CSS a JavaScript pohromadě, bez frameworků a knihoven.</li>
         <li>Rozsah: kolem <b>1 250 řádků</b> kódu (~72 kB).</li>
-        <li>Běží v prohlížeči i offline; překlad zajišťuje Google Translate. Příkladové fráze (jen v cizím jazyce) se stahují z Tatoeby, případně z anglického slovníku dictionaryapi.dev, a ukládají se ke slovíčku.</li>
+        <li>Běží v prohlížeči i offline; překlad zajišťuje Google Translate, příkladové fráze anglický slovník dictionaryapi.dev.</li>
         <li>Funguje jako webová appka (PWA) hostovaná na GitHub Pages.</li>
       </ul>
     </div>
@@ -694,7 +694,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v97';
+const APP_VER='v94';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -881,7 +881,6 @@ function addEntry(lang,cs,foreign,pos,pron,section){
   const nw={id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null,streak:0,history:[],level:0,strength:0,ease:2.0,nextAt:0,seenAt:0,sections:secName?[secName]:[]};
   migrateWord(nw); words.unshift(nw);
   save();
-  ensureExamples(nw);   // při uložení rovnou dohledej fráze
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
   return 'ok';
 }
@@ -930,7 +929,7 @@ async function savePair(i){
       const cl=(cs||'').trim().toLowerCase();
       const sec=currentSaveSection?ensureSection(L,currentSaveSection):'';
       let n=0;
-      words.forEach(w=>{ if(w.lang===L && w.cs.toLowerCase()===cl){ DIRS.forEach(dr=>{const s=dst(w,dr);s.retired=false;s.m=0;s.revAt=0;s.box=1;s.strength=0;s.buriedUntil=0;}); if(sec){ if(!Array.isArray(w.sections))w.sections=[]; if(!w.sections.some(s=>String(s).toLowerCase()===sec.toLowerCase())) w.sections.push(sec); } n++; } });
+      words.forEach(w=>{ if(w.lang===L && w.cs.toLowerCase()===cl){ DIRS.forEach(dr=>{const s=dst(w,dr);s.box=1;s.strength=0;s.nextAt=0;}); if(sec){ if(!Array.isArray(w.sections))w.sections=[]; if(!w.sections.some(s=>String(s).toLowerCase()===sec.toLowerCase())) w.sections.push(sec); } n++; } });
       if(n){ save(); optSaved[i].add(L); }
     }else{
       try{
@@ -1019,7 +1018,7 @@ function renderList(){
     '</div>';
   }).join('');
 }
-function retireWord(id){const w=words.find(x=>x.id===id);if(w){DIRS.forEach(dr=>{const s=dst(w,dr);s.retired=true;s.box=4;s.m=SCH.M_CAP;s.buriedUntil=0;});save();renderList();toast('Umím – už se nenabízí');}}
+function retireWord(id){const w=words.find(x=>x.id===id);if(w){DIRS.forEach(dr=>{const s=dst(w,dr);s.box=4;s.nextAt=nReviews+1000000;s.lastReviewed=Date.now();activeIds.delete(cardKey(w,dr));});save();renderList();toast('Umím – už se nenabízí');}}
 function reviveWord(id){const w=words.find(x=>x.id===id);if(w){DIRS.forEach(dr=>{const s=dst(w,dr);s.box=1;s.strength=0;s.nextAt=0;});save();renderList();toast('Vráceno k učení');}}
 function speakWordById(id){const w=words.find(x=>x.id===id);if(w)speak(w.foreign, LANGS[w.lang].tts);}
 function openWordInCards(id){
@@ -1268,10 +1267,13 @@ let nReviews = (function(){ try{ return parseInt(localStorage.getItem(KEY+'_nrev
 function saveNRev(){ try{ localStorage.setItem(KEY+'_nrev',String(nReviews)); }catch(e){} }
 // Adjustable learning parameters (sliders in Nastavení)
 const PACE_BASE={gapNeumim:3,gapUmim:20}; // poměr, který „Spád" proporčně škáluje
-const SETTINGS_DEFAULTS={pace:100,gapNeumim:3,gapUmim:20,umimGrow:200,maxHard:2,workSet:8,retention:85,sectionSort:'alpha'};
+const SETTINGS_DEFAULTS={pace:100,gapNeumim:3,gapUmim:20,umimGrow:200,maxHard:2,workSet:8,sectionSort:'alpha'};
 const SETTING_DEFS=[
-  {key:'workSet',label:'Pestrost rotace',desc:'Kolik různých slovíček se drží naráz v aktivním drilu (víc = pestřejší a náročnější)',min:4,max:24,step:1},
-  {key:'retention',label:'Jak natvrdo to umět',desc:'Vyšší = kratší odstupy a jistější paměť (víc opakování); nižší = delší odstupy a lehčí zátěž velké sady',min:80,max:90,step:1,fmt:'pct'}
+  {key:'workSet',label:'Pestrost rotace',desc:'Kolik různých slovíček se při učení drží naráz (víc = pestřejší a náročnější, míň = jednodušší)',min:4,max:24,step:1},
+  {key:'gapNeumim',label:'Návrat „Nevím"',desc:'Po kolika jiných slovíčkách se vrátí slovo, které jsi nevěděl',min:1,max:20,step:1},
+  {key:'gapUmim',label:'První odstup „Vím"',desc:'Po kolika slovíčkách se poprvé vrátí slovo, které jsi věděl',min:5,max:120,step:1},
+  {key:'umimGrow',label:'Prodlužování „Vím"',desc:'O kolik se odstup prodlouží po každém dalším „Vím" za sebou',min:110,max:300,step:10,fmt:'mult'},
+  {key:'maxHard',label:'Max „Nevím" za sebou',desc:'Kolik těžkých kartiček smí jít po sobě, než přijde lehčí',min:1,max:6,step:1}
 ];
 let settings={...SETTINGS_DEFAULTS};
 function loadSettings(){try{const s=JSON.parse(localStorage.getItem(KEY+'_settings')||'{}');settings={...SETTINGS_DEFAULTS,...s};}catch(e){settings={...SETTINGS_DEFAULTS};}}
@@ -1279,7 +1281,6 @@ function saveSettings(){try{localStorage.setItem(KEY+'_settings',JSON.stringify(
 let currentCard=null;            // currently shown word
 let currentDir='cs';             // direction of the current card ('cs' = česky→cizí, 'fw' = cizí→česky)
 let flipped=false,learnDir='auto',reviewedThisSession=0,hardStreak=0,sessionAll=false;
-let sessDone=0,sessSinceNew=0;
 const DIRS=['cs','fw'];
 function cardKey(w,dir){return w.id+':'+dir;}
 function dst(w,dir){ return (w.dir&&w.dir[dir]) ? w.dir[dir] : {strength:0,box:1,nextAt:0,lastReviewed:null,streak:0,history:[]}; }
@@ -1309,7 +1310,7 @@ function sessionCards(){
     for(const dr of dirs){
       const st=dst(w,dr);
       if(boxActive){ if(!learnBoxSel.has(st.box)) continue; }
-      else { if(!sessionAll && (st.retired||st.box===4)) continue; }
+      else { if(!sessionAll && st.box===4) continue; }
       out.push({w,dir:dr,st});
     }
   }
@@ -1319,80 +1320,37 @@ let activeIds=new Set();    // pracovní sada karet (klíč w.id:dir) – stín�
 let dirShown={cs:0,fw:0};   // férovost směrů v rámci session (kolik karet daného směru padlo)
 // Výběr další karty: pracovní sada stíní drily před backlogem; když v sadě nic nedozrálo,
 // přibere se JEDNA karta z venku, FÉROVĚ – přednost má směr, který v session zaostává (méně zobrazení).
-/* ===== Plánovač „míra naučení" (time-based, spec v0.2) ===== */
-const SCH={MIN_M:10,INIT_M:30,GRAD:86400,LEARN_ACTIVE:600,G_MIN:2.0,G_MAX:4.0,LAPSE:0.35,RELEARN:30,M_CAP:360*86400,TRICKLE:25,OPENER:8};
-const MIG_M={0:60,1:1200,2:14400,3:172800,4:864000};
-function nowSec(){return Math.floor(Date.now()/1000);}
-function retK(){let r=(settings.retention||85)/100; if(r<0.6)r=0.6; if(r>0.95)r=0.95; return Math.log(r)/Math.log(0.9);}
-function schSeen(st){return (st.m||0)>0;}
-function schDueAt(st){return (st.revAt||0)+(st.m||0)*retK();}
-function schDue(st){return schSeen(st)&&!st.retired&&nowSec()>=schDueAt(st)&&(st.buriedUntil||0)<=nowSec();}
-function schR(st){return schSeen(st)?Math.pow(0.9,(nowSec()-(st.revAt||0))/st.m):0;}
-function schMatured(st){return schSeen(st)&&nowSec()>=schDueAt(st);}
-function schBox(st){return st.retired?4:(!schSeen(st)?1:(st.m<SCH.GRAD?2:3));}
-function nextMidnightSec(now){const d=new Date(now*1000);d.setHours(24,0,0,0);return Math.floor(d.getTime()/1000);}
-function schMigrateDir(s){
-  if(typeof s.m==='number') return;            // už zmigrováno
-  s.buriedUntil=0; s.retired=(s.box===4);
-  const seen=(s.lastReviewed!=null)||((s.strength||0)>0)||((s.box||1)>1);
-  if(s.retired){ s.m=SCH.M_CAP; s.revAt=nowSec(); s.box=4; return; }
-  if(!seen){ s.m=0; s.revAt=0; s.box=1; return; }                 // úplně nové
-  s.m=MIG_M[s.strength||0]||60;
-  const due=nowSec()+(Math.random()*3-1)*86400;                   // termíny rozprostřeny: část hned, zbytek do ~2 dnů
-  s.revAt=Math.round(due - s.m*retK()); s.box=schBox(s);
-}
-function schMigrateAll(){
-  let ch=false;
-  for(const w of words){ if(!w.dir)continue; for(const dr of DIRS){ const s=w.dir[dr]; if(s&&typeof s.m!=='number'){ schMigrateDir(s); ch=true; } } }
-  if(ch) save();
-}
-function schGrade(real,dir,known,intensive){
-  const st=dst(real,dir); if(real.dir) real.dir[dir]=st;
-  const now=nowSec();
-  const R=schR(st), matured=schMatured(st), seen=schSeen(st);
-  if(known){
-    if(!seen) st.m=SCH.INIT_M;
-    else if(matured||intensive) st.m=Math.min(SCH.M_CAP, st.m*(SCH.G_MIN+(SCH.G_MAX-SCH.G_MIN)*(1-R)));
-    st.strength=(st.strength||0)+(matured?1:0); if((st.strength||0)<1)st.strength=1; st.streak=(st.streak||0)+1;
-  }else{
-    st.m = seen ? Math.max(SCH.MIN_M, Math.min(st.m*SCH.LAPSE, SCH.RELEARN)) : SCH.MIN_M;
-    st.strength=Math.max(0,(st.strength||0)-2); st.streak=0;
-  }
-  st.revAt=now; st.lastReviewed=Date.now();
-  if(st.m>=SCH.M_CAP) st.retired=true;
-  st.box=schBox(st);
-  DIRS.forEach(d2=>{ if(d2!==dir){ const s2=dst(real,d2); if(s2&&!s2.retired&&((s2.m||0)===0||(s2.m||0)>=SCH.GRAD)) s2.buriedUntil=Math.max(s2.buriedUntil||0,nextMidnightSec(now)); } });
-  if(!Array.isArray(st.history)) st.history=[];
-  st.history.push({b:known?'v':'n',t:Date.now()}); if(st.history.length>10) st.history.shift();
-}
-
 function pickNext(cards){
   if(!cards.length)return null;
-  const focused=(typeof learnSectionSel!=='undefined' && learnSectionSel && learnSectionSel.size>0);
-  // 1) UČENÍ po termínu → nejbližší dueAt
-  let best=null;
-  for(const c of cards){ const st=c.st; if(schDue(st)&&st.m<SCH.GRAD){ if(!best||st.m<best.st.m||(st.m===best.st.m&&schDueAt(st)<schDueAt(best.st))) best=c; } }
-  if(best) return best;
-  // 2) nové slovo — brána pracovní sady NEBO trickle; nejnovější přidané první
-  const activeW=new Set();
-  for(const c of cards){ const st=c.st; if(schSeen(st)&&!st.retired&&st.m<SCH.LEARN_ACTIVE) activeW.add(c.w.id); }
-  const canNew = focused || activeW.size<(settings.workSet||8) || (sessDone>=SCH.OPENER && sessSinceNew>=SCH.TRICKLE);
-  if(canNew){
-    let pk=null;
-    for(const c of cards){ const st=c.st; if(!schSeen(st)&&!st.retired){ if(!pk||(c.w.added||0)>(pk.w.added||0)) pk=c; } }
-    if(pk) return pk;
+  if(learnBoxSel.size>0){
+    // skupina podle stavu → priorita podle data posledního učení (nejstarší první), shoda náhodně
+    let min=Infinity; cards.forEach(c=>{ const t=c.st.lastReviewed||0; if(t<min)min=t; });
+    const oldest=cards.filter(c=>(c.st.lastReviewed||0)===min);
+    return oldest[Math.floor(Math.random()*oldest.length)];
   }
-  // 3) OPAKOVÁNÍ po termínu → nejnižší R (nejvíc opožděné)
-  let rev=null,rr=Infinity;
-  for(const c of cards){ const st=c.st; if(schDue(st)&&st.m>=SCH.GRAD){ const r=schR(st); if(r<rr){rr=r;rev=c;} } }
-  if(rev) return rev;
-  // 4) cílená sekce: dotahuj nejdéle neviděné neukončené (drobný odstup), ať session nekončí hned
-  if(focused){
-    let pk=null,pr=Infinity;
-    for(const c of cards){ const st=c.st; if(schSeen(st)&&!st.retired&&st.m<SCH.GRAD&&(nowSec()-(st.revAt||0))>=15){ const tt=(st.revAt||0); if(tt<pr){pr=tt;pk=c;} } }
-    if(pk) return pk;
+  const active=cards.filter(c=>activeIds.has(cardKey(c.w,c.dir)));
+  const dueActive=active.filter(c=> nReviews>=(c.st.nextAt||0)).sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0));
+  const out=cards.filter(c=>!activeIds.has(cardKey(c.w,c.dir)));
+  // Dokud je v rotaci málo různých SLOV, přiber další (i když je co opakovat) → pestřejší dril.
+  // Počítá se ve slovech (ne kartičkách), takže workSet 8 = 8 různých slov (klidně v obou směrech).
+  const activeWords=new Set(); activeIds.forEach(k=>activeWords.add(k.slice(0,k.lastIndexOf(':'))));
+  const wantNew = activeWords.size < (settings.workSet||8);
+  if((wantNew || !dueActive.length) && out.length){
+    let usable=out.filter(c=> (c.st.lastReviewed && nReviews>=(c.st.nextAt||0)) || !c.st.lastReviewed );
+    if(!usable.length) usable=out;
+    usable.sort((a,b)=>{
+      if(dirShown[a.dir]!==dirShown[b.dir]) return dirShown[a.dir]-dirShown[b.dir]; // férovost směrů
+      const sa=a.st.lastReviewed?0:1, sb=b.st.lastReviewed?0:1; if(sa!==sb) return sa-sb; // dozrálé z backlogu před úplně novými
+      return (a.st.nextAt||0)-(b.st.nextAt||0);
+    });
+    const c=usable[0]; activeIds.add(cardKey(c.w,c.dir)); return c;
   }
-  return null;
+  if(dueActive.length){
+    if(hardStreak>=settings.maxHard){ const easy=dueActive.find(c=>c.st.box!==1); if(easy) return easy; } // nepřetížit „Nevím" v řadě
+    return dueActive[Math.floor(Math.random()*Math.min(3,dueActive.length))];
+  }
+  if(active.length) return active.slice().sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0))[0];
+  return cards.slice().sort((a,b)=>(a.st.nextAt||0)-(b.st.nextAt||0))[0];
 }
 let currentWasDue=false;
 function nextCard(){
@@ -1403,16 +1361,16 @@ function nextCard(){
   if(!pool.length) pool=all;
   const pick=pickNext(pool);
   if(!pick){currentCard=null;return false;}
-  const wasNew=!schSeen(pick.st);
   currentCard=pick.w; currentDir=pick.dir;
+  currentWasDue = nReviews >= (pick.st.nextAt||0);
   nReviews++; saveNRev();
   dirShown[currentDir]=(dirShown[currentDir]||0)+1;
-  sessDone++; sessSinceNew = wasNew ? 0 : sessSinceNew+1;
+  hardStreak = pick.st.box===1 ? hardStreak+1 : 0;
   return true;
 }
 function startLearn(forceAll){
   sessionAll=!!forceAll;
-  reviewedThisSession=0;hardStreak=0;currentCard=null;flipped=false;activeIds=new Set();dirShown={cs:0,fw:0};sessDone=0;sessSinceNew=0;
+  reviewedThisSession=0;hardStreak=0;currentCard=null;flipped=false;activeIds=new Set();dirShown={cs:0,fw:0};
   renderLearnStavBar();
   renderSecBar('learnSecBar',learnSectionSel,'learn');
   const noWords=words.length===0;
@@ -1468,7 +1426,8 @@ function flipCard(){
     animWord();
     document.getElementById('cardHint').classList.add('hidden');
     renderCardPron();
-    renderExamples(w);
+    if(w.lang==='en') loadExamples(w.foreign);
+    else { document.getElementById('exampleBox').classList.add('hidden'); document.getElementById('examples').innerHTML=''; }
   }else{
     const front=frontSide(w);
     document.getElementById('cardSide').textContent=front.label;
@@ -1495,7 +1454,7 @@ function vimGap(strength){
 function retireCurrent(){
   const w=currentCard; if(!w)return;
   const real=words.find(x=>x.id===w.id)||w;
-  DIRS.forEach(dr=>{ const s=dst(real,dr); s.retired=true; s.box=4; s.m=SCH.M_CAP; s.buriedUntil=0; });
+  DIRS.forEach(dr=>{ const s=dst(real,dr); s.box=4; s.nextAt=nReviews+1000000; s.lastReviewed=Date.now(); activeIds.delete(cardKey(real,dr)); });
   save();
   toast('Naučeno – už se nenabízí');
   if(nextCard()) showCard(); else finishLearn();
@@ -1503,7 +1462,26 @@ function retireCurrent(){
 function know(known){
   const w=currentCard; if(!w)return;
   const real=words.find(x=>x.id===w.id)||w;
-  schGrade(real, currentDir, known, false);
+  const st=dst(real,currentDir); if(real.dir) real.dir[currentDir]=st;
+  const now=Date.now();
+  if(!Array.isArray(st.history)) st.history=[];
+  st.history.push({b:known?'v':'n',t:now}); if(st.history.length>10) st.history.shift();
+  const wasDue=currentWasDue;
+  if(known){
+    if(wasDue) st.strength=(st.strength||0)+1;        // povýší jen když dozrálo (pojistka proti nafouknutí)
+    if((st.strength||0)<1) st.strength=1;
+    st.streak=(st.streak||0)+1;
+    st.box = (st.strength>=3) ? 3 : 2;                // stav směru se odvodí ze síly
+    st.nextAt = nReviews + vimGap(st.strength);
+    if(st.strength>=3) activeIds.delete(cardKey(real,currentDir));  // dozrálá karta opouští sadu
+  }else{
+    st.strength=Math.max(0,(st.strength||0)-2);       // měkký propad
+    st.streak=0;
+    st.box=1;
+    st.nextAt = nReviews + (settings.gapNeumim||3);    // krátký odstup → re-drill
+    activeIds.add(cardKey(real,currentDir));           // zůstává v sadě
+  }
+  st.lastReviewed=now;
   reviewedThisSession++;
   save();
   if(nextCard()) showCard(); else finishLearn();
@@ -1518,52 +1496,40 @@ function finishLearn(){
 }
 
 /* ---------- Example phrases (Free Dictionary API for EN words) ---------- */
-const TATO_LANG={en:'eng',de:'deu',es:'spa',it:'ita',el:'ell'};
-// cizojazyčné věty z Tatoeby (reálné lidské věty, víc jazyků)
-async function fetchTatoeba(w){
-  const code=TATO_LANG[w.lang]; if(!code) throw new Error('lang');
-  const q=w.foreign.trim();
-  const r=await fetch('https://tatoeba.org/'+code+'/api_v0/search?from='+code+'&query='+encodeURIComponent(q)+'&sort=relevance');
-  if(!r.ok) throw new Error('http');
-  const d=await r.json(); const low=q.toLowerCase(); const out=[];
-  for(const it of (d.results||[])){ const t=(it.text||'').trim();
-    if(t && t.toLowerCase().includes(low) && !out.includes(t)) out.push(t);
-    if(out.length>=3) break; }
-  return out;
+async function loadExamples(word){
+  const box=document.getElementById('exampleBox');
+  const cont=document.getElementById('examples');
+  box.classList.remove('hidden');
+  cont.innerHTML='<div class="ex-loading">Hledám fráze…</div>';
+  const single=word.trim().split(/\s+/).length===1;
+  try{
+    if(!single)throw new Error('phrase');
+    const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word.toLowerCase()));
+    if(!r.ok)throw new Error('not found');
+    const d=await r.json();
+    const ex=[];
+    d.forEach(entry=>(entry.meanings||[]).forEach(m=>(m.definitions||[]).forEach(def=>{
+      if(def.example) ex.push(def.example);
+    })));
+    const uniq=[...new Set(ex)].slice(0,4);
+    if(!uniq.length)throw new Error('no examples');
+    // translate each example to CS
+    cont.innerHTML='';
+    for(const sentence of uniq){
+      const id='ex'+Math.random().toString(36).slice(2);
+      const hl=esc(sentence).replace(new RegExp('('+word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<em>$1</em>');
+      cont.innerHTML+=`<div class="ex">${hl}<span class="tr" id="${id}">…</span></div>`;
+      translateExample(sentence,id);
+    }
+  }catch(e){
+    cont.innerHTML='<div class="ex-loading">Pro toto slovo se nenašly ukázkové fráze.</div>';
+  }
 }
-// fallback jen pro EN: ukázkové věty z anglického slovníku
-async function fetchDictExamples(word){
-  const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word.toLowerCase()));
-  if(!r.ok) throw new Error('http');
-  const d=await r.json(); const ex=[];
-  d.forEach(e=>(e.meanings||[]).forEach(m=>(m.definitions||[]).forEach(df=>{ if(df.example) ex.push(df.example); })));
-  return [...new Set(ex)].slice(0,3);
-}
-// stáhne fráze JEDNOU, uloží ke slovu a nastaví příznak: exState 1=nalezeno, 0=zkusili-nic (už nezkouší dokola)
-async function ensureExamples(w){
-  if(w.exState===1||w.exState===0) return;
-  if(!navigator.onLine) return;
-  let found=[], responded=false;
-  try{ found=await fetchTatoeba(w); responded=true; }catch(e){}
-  if(!found.length && w.lang==='en'){ try{ found=await fetchDictExamples(w.foreign); responded=true; }catch(e){} }
-  if(found.length){ w.ex=found; w.exState=1; }
-  else if(responded){ w.exState=0; }
-  else { w.exTry=(w.exTry||0)+1; if(w.exTry>=3) w.exState=0; }   // síť/CORS opakovaně selhala → po pár pokusech to vzdá
-  save();
-}
-// zobrazení na zadní straně – jen cizojazyčné věty, hledané slovo zvýrazněné
-async function renderExamples(w){
-  const box=document.getElementById('exampleBox'), cont=document.getElementById('examples');
-  const show=arr=>{ box.classList.remove('hidden');
-    const rx=new RegExp('('+w.foreign.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
-    cont.innerHTML=arr.map(s=>'<div class="ex">'+esc(s).replace(rx,'<em>$1</em>')+'</div>').join(''); };
-  if(w.exState===1){ show(w.ex); return; }
-  if(w.exState===0){ box.classList.add('hidden'); cont.innerHTML=''; return; }
-  box.classList.remove('hidden'); cont.innerHTML='<div class="ex-loading">Hledám fráze…</div>';
-  await ensureExamples(w);
-  if(currentCard!==w) return;
-  if(w.exState===1) show(w.ex);
-  else cont.innerHTML='<div class="ex-loading">Pro toto slovo se zatím nenašly ukázkové fráze.</div>';
+async function translateExample(sentence,id){
+  try{
+    const res=await translateText(sentence,'en','cs');
+    const el=document.getElementById(id);if(el)el.textContent=res.text||'';
+  }catch(e){const el=document.getElementById(id);if(el)el.textContent='';}
 }
 
 /* ---------- Statistics ---------- */
@@ -1634,9 +1600,14 @@ function renderStats(){
 
 /* ---------- Settings UI ---------- */
 function updateWeightInfo(){
-  const el=document.getElementById('weightInfo'); if(el) el.innerHTML='Odstupy se počítají v reálném čase (míra naučení). „Jak natvrdo to umět\u201c řídí jejich délku.';
+  const el=document.getElementById('weightInfo');if(!el)return;
+  const base=settings.gapUmim||20, g=(settings.umimGrow||200)/100;
+  let v=base, seq=[];
+  for(let i=0;i<5;i++){ seq.push(Math.round(v)); v*=g; }
+  el.innerHTML='Odstupy (v počtu prošlých slovíček): <b>Nevím '+(settings.gapNeumim||3)+'</b>, <b>Vím '+seq.join(' → ')+' …</b> '
+    +'Čím víckrát po sobě dáš „Vím", tím delší odstup. Počítá se ve slovíčkách, ne ve dnech; datum slouží jen k prioritě.';
 }
-function fmtSetting(d,v){ return d.fmt==='mult' ? ('×'+(v/100).toFixed(1)) : (d.fmt==='pct' ? (v+' %') : String(v)); }
+function fmtSetting(d,v){ return d.fmt==='mult' ? ('×'+(v/100).toFixed(1)) : String(v); }
 function advRow(d){
   return '<div class="setrow">'+
       '<div class="info"><div class="lbl">'+d.label+'</div><div class="dsc">'+d.desc+'</div></div>'+
@@ -1657,7 +1628,10 @@ function renderSettings(){
       '</div>'+
     '</div>';
   const adv=SETTING_DEFS.map(advRow).join('');
-  document.getElementById('settingsList').innerHTML=adv;
+  document.getElementById('settingsList').innerHTML=
+    master+
+    '<button class="advtoggle" id="advToggle" onclick="toggleAdvanced()">Pokročilé nastavení ▸</button>'+
+    '<div id="advSettings" class="hidden">'+adv+'</div>';
   updateWeightInfo();
   updateSectionSortUI();
   renderSectionMgr();
@@ -1752,7 +1726,6 @@ function show(v){
 
 /* ---------- init ---------- */
 loadSettings();
-schMigrateAll();
 loadLang();
 sectionsReg=loadSections();
 loadSecSel();
