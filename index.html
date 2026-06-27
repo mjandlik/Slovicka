@@ -271,7 +271,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v96</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v97</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -493,7 +493,7 @@
         <li>Appku vyvinul <b>Claude</b> (AI od Anthropicu) ve spolupráci s autorem.</li>
         <li>Je to <b>jeden samostatný HTML soubor</b> – HTML, CSS a JavaScript pohromadě, bez frameworků a knihoven.</li>
         <li>Rozsah: kolem <b>1 250 řádků</b> kódu (~72 kB).</li>
-        <li>Běží v prohlížeči i offline; překlad zajišťuje Google Translate, příkladové fráze anglický slovník dictionaryapi.dev.</li>
+        <li>Běží v prohlížeči i offline; překlad zajišťuje Google Translate. Příkladové fráze (jen v cizím jazyce) se stahují z Tatoeby, případně z anglického slovníku dictionaryapi.dev, a ukládají se ke slovíčku.</li>
         <li>Funguje jako webová appka (PWA) hostovaná na GitHub Pages.</li>
       </ul>
     </div>
@@ -694,7 +694,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v96';
+const APP_VER='v97';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -881,6 +881,7 @@ function addEntry(lang,cs,foreign,pos,pron,section){
   const nw={id:Date.now()+Math.floor(Math.random()*1000),lang,foreign,cs,pron:(pron||''),pos:pos||'',box:1,added:Date.now(),due:Date.now(),lastReviewed:null,streak:0,history:[],level:0,strength:0,ease:2.0,nextAt:0,seenAt:0,sections:secName?[secName]:[]};
   migrateWord(nw); words.unshift(nw);
   save();
+  ensureExamples(nw);   // při uložení rovnou dohledej fráze
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
   return 'ok';
 }
@@ -1467,8 +1468,7 @@ function flipCard(){
     animWord();
     document.getElementById('cardHint').classList.add('hidden');
     renderCardPron();
-    if(w.lang==='en') loadExamples(w.foreign);
-    else { document.getElementById('exampleBox').classList.add('hidden'); document.getElementById('examples').innerHTML=''; }
+    renderExamples(w);
   }else{
     const front=frontSide(w);
     document.getElementById('cardSide').textContent=front.label;
@@ -1518,40 +1518,52 @@ function finishLearn(){
 }
 
 /* ---------- Example phrases (Free Dictionary API for EN words) ---------- */
-async function loadExamples(word){
-  const box=document.getElementById('exampleBox');
-  const cont=document.getElementById('examples');
-  box.classList.remove('hidden');
-  cont.innerHTML='<div class="ex-loading">Hledám fráze…</div>';
-  const single=word.trim().split(/\s+/).length===1;
-  try{
-    if(!single)throw new Error('phrase');
-    const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word.toLowerCase()));
-    if(!r.ok)throw new Error('not found');
-    const d=await r.json();
-    const ex=[];
-    d.forEach(entry=>(entry.meanings||[]).forEach(m=>(m.definitions||[]).forEach(def=>{
-      if(def.example) ex.push(def.example);
-    })));
-    const uniq=[...new Set(ex)].slice(0,4);
-    if(!uniq.length)throw new Error('no examples');
-    // translate each example to CS
-    cont.innerHTML='';
-    for(const sentence of uniq){
-      const id='ex'+Math.random().toString(36).slice(2);
-      const hl=esc(sentence).replace(new RegExp('('+word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<em>$1</em>');
-      cont.innerHTML+=`<div class="ex">${hl}<span class="tr" id="${id}">…</span></div>`;
-      translateExample(sentence,id);
-    }
-  }catch(e){
-    cont.innerHTML='<div class="ex-loading">Pro toto slovo se nenašly ukázkové fráze.</div>';
-  }
+const TATO_LANG={en:'eng',de:'deu',es:'spa',it:'ita',el:'ell'};
+// cizojazyčné věty z Tatoeby (reálné lidské věty, víc jazyků)
+async function fetchTatoeba(w){
+  const code=TATO_LANG[w.lang]; if(!code) throw new Error('lang');
+  const q=w.foreign.trim();
+  const r=await fetch('https://tatoeba.org/'+code+'/api_v0/search?from='+code+'&query='+encodeURIComponent(q)+'&sort=relevance');
+  if(!r.ok) throw new Error('http');
+  const d=await r.json(); const low=q.toLowerCase(); const out=[];
+  for(const it of (d.results||[])){ const t=(it.text||'').trim();
+    if(t && t.toLowerCase().includes(low) && !out.includes(t)) out.push(t);
+    if(out.length>=3) break; }
+  return out;
 }
-async function translateExample(sentence,id){
-  try{
-    const res=await translateText(sentence,'en','cs');
-    const el=document.getElementById(id);if(el)el.textContent=res.text||'';
-  }catch(e){const el=document.getElementById(id);if(el)el.textContent='';}
+// fallback jen pro EN: ukázkové věty z anglického slovníku
+async function fetchDictExamples(word){
+  const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word.toLowerCase()));
+  if(!r.ok) throw new Error('http');
+  const d=await r.json(); const ex=[];
+  d.forEach(e=>(e.meanings||[]).forEach(m=>(m.definitions||[]).forEach(df=>{ if(df.example) ex.push(df.example); })));
+  return [...new Set(ex)].slice(0,3);
+}
+// stáhne fráze JEDNOU, uloží ke slovu a nastaví příznak: exState 1=nalezeno, 0=zkusili-nic (už nezkouší dokola)
+async function ensureExamples(w){
+  if(w.exState===1||w.exState===0) return;
+  if(!navigator.onLine) return;
+  let found=[], responded=false;
+  try{ found=await fetchTatoeba(w); responded=true; }catch(e){}
+  if(!found.length && w.lang==='en'){ try{ found=await fetchDictExamples(w.foreign); responded=true; }catch(e){} }
+  if(found.length){ w.ex=found; w.exState=1; }
+  else if(responded){ w.exState=0; }
+  else { w.exTry=(w.exTry||0)+1; if(w.exTry>=3) w.exState=0; }   // síť/CORS opakovaně selhala → po pár pokusech to vzdá
+  save();
+}
+// zobrazení na zadní straně – jen cizojazyčné věty, hledané slovo zvýrazněné
+async function renderExamples(w){
+  const box=document.getElementById('exampleBox'), cont=document.getElementById('examples');
+  const show=arr=>{ box.classList.remove('hidden');
+    const rx=new RegExp('('+w.foreign.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
+    cont.innerHTML=arr.map(s=>'<div class="ex">'+esc(s).replace(rx,'<em>$1</em>')+'</div>').join(''); };
+  if(w.exState===1){ show(w.ex); return; }
+  if(w.exState===0){ box.classList.add('hidden'); cont.innerHTML=''; return; }
+  box.classList.remove('hidden'); cont.innerHTML='<div class="ex-loading">Hledám fráze…</div>';
+  await ensureExamples(w);
+  if(currentCard!==w) return;
+  if(w.exState===1) show(w.ex);
+  else cont.innerHTML='<div class="ex-loading">Pro toto slovo se zatím nenašly ukázkové fráze.</div>';
 }
 
 /* ---------- Statistics ---------- */
