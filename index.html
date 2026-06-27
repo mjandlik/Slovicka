@@ -271,7 +271,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v98</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v99</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -303,6 +303,9 @@
       <button class="btn ghost" id="listBackupBtn" style="margin:0;flex:1;" onclick="exportWords()">⬇ Záloha</button>
       <button class="btn ghost" style="margin:0;flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
       <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
+    </div>
+    <div style="margin:0 0 12px;">
+      <button class="btn ghost" id="autoSaveBtn" style="margin:0;width:100%;" onclick="autoSaveClick()">⊙ Auto‑ukládání</button>
     </div>
     <button class="btn" style="margin:0 0 10px;" onclick="openNewWord()">➕ Nové slovíčko</button>
     <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:8px;">
@@ -575,7 +578,7 @@ function migrateWord(w){
   });
   return w;
 }
-function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();}
+function save(){localStorage.setItem(KEY,JSON.stringify(words));localStorage.setItem(KEY+'_changed',String(Date.now()));updateBackupBanner();autoSaveSchedule();}
 
 /* ---------- Sections ---------- */
 const NO_SECTION='\u0000none';   // sentinel for "Bez sekce"
@@ -694,7 +697,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v98';
+const APP_VER='v99';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1100,6 +1103,74 @@ function markBackupDone(){
   localStorage.setItem(KEY+'_backup',String(Date.now()));
   updateBackupBanner();
 }
+/* ---------- Pestré písmo při učení (náhodný font / velikost / barva) ---------- */
+const FUN_FONTS=['Georgia, serif','"Times New Roman", serif','"Courier New", monospace','Verdana, sans-serif','"Trebuchet MS", sans-serif','"Comic Sans MS", cursive','Tahoma, sans-serif','Garamond, serif','system-ui, sans-serif','monospace','cursive','fantasy','serif','sans-serif'];
+function styleCardWord(){
+  const el=document.getElementById('cardWord'); if(!el) return;
+  if(!settings.funFont){ el.style.fontFamily=''; el.style.fontSize=''; el.style.color=''; el.style.fontStyle=''; return; }
+  const R=(a,b)=>a+Math.random()*(b-a);
+  const len=(el.textContent||'').length;
+  const size = len>24 ? R(22,28) : (len>14 ? R(26,34) : R(30,46));
+  el.style.fontFamily=FUN_FONTS[Math.floor(Math.random()*FUN_FONTS.length)];
+  el.style.fontSize=Math.round(size)+'px';
+  // tmavé téma → světlé, dobře čitelné barvy
+  el.style.color='hsl('+Math.floor(R(0,360))+','+Math.floor(R(55,82))+'%,'+Math.floor(R(64,80))+'%)';
+  el.style.fontStyle=Math.random()<0.18?'italic':'normal';
+}
+function toggleFunFont(){ settings.funFont=settings.funFont?0:1; saveSettings(); updateFunFontBtn(); styleCardWord(); }
+function updateFunFontBtn(){ const b=document.getElementById('funFontBtn'); if(b) b.textContent=settings.funFont?'Zapnuto':'Vypnuto'; }
+
+/* ---------- Automatické ukládání do pevného souboru (File System Access API) ---------- */
+let autoHandle=null, autoReady=false, autoTimer=null;
+function autoPayload(){
+  return JSON.stringify({app:'Slovíčka',version:8,savedAt:new Date().toISOString(),now_ms:Date.now(),
+    defaultLang:activeLang, settings:settings, sections:sectionsReg, words:words},null,2);
+}
+function idbDo(mode,fn){
+  return new Promise((res,rej)=>{ const r=indexedDB.open('slovicka-fs',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('h');
+    r.onerror=()=>rej(r.error);
+    r.onsuccess=()=>{ const db=r.result; const tx=db.transaction('h',mode); const st=tx.objectStore('h');
+      const out=fn(st); tx.oncomplete=()=>{db.close();res(out&&out.result!==undefined?out.result:undefined);}; tx.onerror=()=>{db.close();rej(tx.error);}; }; });
+}
+const idbSet=(k,v)=>idbDo('readwrite',st=>st.put(v,k));
+const idbGet=(k)=>idbDo('readonly',st=>st.get(k));
+async function ensurePerm(h){ try{ const o={mode:'readwrite'};
+  if((await h.queryPermission(o))==='granted') return true;
+  if((await h.requestPermission(o))==='granted') return true; }catch(e){} return false; }
+async function autoSaveWriteNow(){
+  if(!autoHandle) return;
+  if(!autoReady){ if(!await ensurePerm(autoHandle)){ updateAutoUI(); return; } autoReady=true; updateAutoUI(); }
+  try{ const ws=await autoHandle.createWritable(); await ws.write(autoPayload()); await ws.close(); }
+  catch(e){ autoReady=false; updateAutoUI(); }
+}
+function autoSaveSchedule(){ if(!autoHandle) return; clearTimeout(autoTimer); autoTimer=setTimeout(autoSaveWriteNow,1500); }
+async function autoSaveEnable(){
+  try{
+    const h=await window.showSaveFilePicker({suggestedName:'slovicka.json',
+      types:[{description:'Slovíčka',accept:{'application/json':['.json']}}]});
+    autoHandle=h; autoReady=true; try{await idbSet('autoHandle',h);}catch(e){}
+    await autoSaveWriteNow(); updateAutoUI(); toast('Auto‑ukládání zapnuto ✓');
+  }catch(e){ if(e&&e.name==='AbortError') return; toast('Auto‑ukládání se nepovedlo zapnout'); }
+}
+async function autoSaveDisable(){ autoHandle=null; autoReady=false; try{await idbSet('autoHandle',null);}catch(e){} updateAutoUI(); toast('Auto‑ukládání vypnuto'); }
+async function autoSaveClick(){
+  if(!window.showSaveFilePicker){ toast('Auto‑ukládání tohle zařízení nepodporuje (použij Zálohu)'); return; }
+  if(!autoHandle){ await autoSaveEnable(); return; }
+  if(!autoReady){ if(await ensurePerm(autoHandle)){ autoReady=true; await autoSaveWriteNow(); toast('Auto‑ukládání obnoveno ✓'); } else toast('Přístup k souboru nepovolen'); updateAutoUI(); return; }
+  if(confirm('Vypnout automatické ukládání do souboru?')) await autoSaveDisable();
+}
+function updateAutoUI(){
+  const b=document.getElementById('autoSaveBtn'); if(!b) return;
+  if(!window.showSaveFilePicker){ b.textContent='⊙ Auto‑ukládání: nepodporováno'; b.disabled=true; return; }
+  b.disabled=false;
+  b.textContent = !autoHandle ? '⊙ Auto‑ukládání: vypnuto'
+    : (!autoReady ? '⊙ Auto‑ukládání: klepni pro obnovení' : '⊙ Auto‑ukládání: zapnuto ✓');
+}
+async function autoSaveInit(){
+  try{ const h=await idbGet('autoHandle'); if(h){ autoHandle=h; autoReady=(await h.queryPermission({mode:'readwrite'}))==='granted'; } }catch(e){}
+  updateAutoUI();
+}
 async function exportWords(){
   if(!words.length){toast('Nejsou žádná slovíčka');return;}
   const _t=new Date(),_p=n=>String(n).padStart(2,'0');
@@ -1268,7 +1339,7 @@ let nReviews = (function(){ try{ return parseInt(localStorage.getItem(KEY+'_nrev
 function saveNRev(){ try{ localStorage.setItem(KEY+'_nrev',String(nReviews)); }catch(e){} }
 // Adjustable learning parameters (sliders in Nastavení)
 const PACE_BASE={gapNeumim:3,gapUmim:20}; // poměr, který „Spád" proporčně škáluje
-const SETTINGS_DEFAULTS={pace:100,gapNeumim:3,gapUmim:20,umimGrow:200,maxHard:2,workSet:8,retention:85,sectionSort:'alpha'};
+const SETTINGS_DEFAULTS={pace:100,gapNeumim:3,gapUmim:20,umimGrow:200,maxHard:2,workSet:8,retention:85,funFont:1,sectionSort:'alpha'};
 const SETTING_DEFS=[
   {key:'workSet',label:'Pestrost rotace',desc:'Kolik různých slovíček se drží naráz v aktivním drilu (víc = pestřejší a náročnější)',min:4,max:24,step:1},
   {key:'retention',label:'Jak natvrdo to umět',desc:'Vyšší = kratší odstupy a jistější paměť (víc opakování); nižší = delší odstupy a lehčí zátěž velké sady',min:80,max:90,step:1,fmt:'pct'}
@@ -1285,7 +1356,7 @@ let recentWids=[];          // posledních SESS_GAP zobrazených slov (id)
 const DIRS=['cs','fw'];
 function cardKey(w,dir){return w.id+':'+dir;}
 function dst(w,dir){ return (w.dir&&w.dir[dir]) ? w.dir[dir] : {strength:0,box:1,nextAt:0,lastReviewed:null,streak:0,history:[]}; }
-function animWord(){const el=document.getElementById('cardWord');el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
+function animWord(){const el=document.getElementById('cardWord');styleCardWord();el.classList.remove('anim');void el.offsetWidth;el.classList.add('anim');}
 function pl(n,one,few,many){return n===1?one:(n>=2&&n<=4?few:many);}
 function updateNextDueInfo(){
   const el=document.getElementById('nextDueText');
@@ -1663,7 +1734,8 @@ function renderSettings(){
       '</div>'+
     '</div>';
   const adv=SETTING_DEFS.map(advRow).join('');
-  document.getElementById('settingsList').innerHTML=adv;
+  document.getElementById('settingsList').innerHTML=adv+'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);">'+'<div style="flex:1;"><div style="font-weight:600;">Pestré písmo při učení</div>'+'<div style="font-size:13px;color:var(--ink-faint);">Náhodný font, velikost a barva slovíčka – pomáhá zapamatování.</div></div>'+'<button class="btn ghost" id="funFontBtn" style="flex:0 0 auto;min-width:84px;margin:0;" onclick="toggleFunFont()"></button></div>';
+  updateFunFontBtn();
   updateWeightInfo();
   updateSectionSortUI();
   renderSectionMgr();
@@ -1771,6 +1843,8 @@ if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoicesch
 if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
 refreshLabels();renderList();updateBackupBanner();
+autoSaveInit();
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) autoSaveWriteNow(); });
 document.getElementById('src').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();translateNow();}});
 
 /* ---------- silent auto-update: load the newest version when one is published ---------- */
