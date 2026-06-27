@@ -94,6 +94,7 @@
   }
   .btn:active{transform:translateY(1px);}
   .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  .btn.sm{padding:9px 8px;font-size:13.5px;font-weight:600;border-radius:10px;margin-top:0;gap:5px;min-width:0;}
   .btn:disabled{opacity:.5;}
 
   .result{margin-top:14px;}
@@ -271,7 +272,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v99</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v100</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -299,16 +300,14 @@
 
   <!-- ============ WORD LIST ============ -->
   <section id="view-list" class="hidden">
-    <div style="display:flex;gap:8px;margin:0 0 12px;">
-      <button class="btn ghost" id="listBackupBtn" style="margin:0;flex:1;" onclick="exportWords()">⬇ Záloha</button>
-      <button class="btn ghost" style="margin:0;flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
+    <div style="display:flex;gap:6px;margin:0 0 8px;">
+      <button class="btn ghost sm" id="listBackupBtn" style="flex:1;" onclick="exportWords()">⬇ Záloha</button>
+      <button class="btn ghost sm" style="flex:1;" onclick="document.getElementById('syncFile').click()">🔄 Sync</button>
+      <button class="btn ghost sm" id="autoSaveBtn" style="flex:1;" onclick="autoSaveClick()">⊙ Auto</button>
       <input type="file" id="syncFile" accept="application/json,.json" style="display:none" onchange="syncWords(event)">
     </div>
-    <div style="margin:0 0 12px;">
-      <button class="btn ghost" id="autoSaveBtn" style="margin:0;width:100%;" onclick="autoSaveClick()">⊙ Auto‑ukládání</button>
-    </div>
-    <button class="btn" style="margin:0 0 10px;" onclick="openNewWord()">➕ Nové slovíčko</button>
-    <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:8px;">
+    <button class="btn" style="margin:0 0 8px;padding:11px;font-size:15px;" onclick="openNewWord()">➕ Nové slovíčko</button>
+    <input type="text" id="listSearch" placeholder="Hledat slovíčko…" oninput="renderList()" style="margin-bottom:6px;">
     <div id="listStavBar" class="secbar"></div>
     <div id="listSecBar" class="secbar hidden"></div>
     <div class="dir" id="listLangRow" style="margin-bottom:8px;">
@@ -697,7 +696,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v99';
+const APP_VER='v100';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1162,10 +1161,11 @@ async function autoSaveClick(){
 }
 function updateAutoUI(){
   const b=document.getElementById('autoSaveBtn'); if(!b) return;
-  if(!window.showSaveFilePicker){ b.textContent='⊙ Auto‑ukládání: nepodporováno'; b.disabled=true; return; }
+  if(!window.showSaveFilePicker){ b.textContent='⊙ Auto ✕'; b.title='Auto‑ukládání: tohle zařízení nepodporuje'; b.disabled=true; return; }
   b.disabled=false;
-  b.textContent = !autoHandle ? '⊙ Auto‑ukládání: vypnuto'
-    : (!autoReady ? '⊙ Auto‑ukládání: klepni pro obnovení' : '⊙ Auto‑ukládání: zapnuto ✓');
+  if(!autoHandle){ b.textContent='⊙ Auto'; b.title='Auto‑ukládání: vypnuto – klepni pro zapnutí'; }
+  else if(!autoReady){ b.textContent='⊙ Auto !'; b.title='Auto‑ukládání: klepni pro obnovení přístupu k souboru'; }
+  else { b.textContent='⊙ Auto ✓'; b.title='Auto‑ukládání: zapnuto'; }
 }
 async function autoSaveInit(){
   try{ const h=await idbGet('autoHandle'); if(h){ autoHandle=h; autoReady=(await h.queryPermission({mode:'readwrite'}))==='granted'; } }catch(e){}
