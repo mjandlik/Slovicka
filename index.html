@@ -116,7 +116,8 @@
   .langsq.exists{background:var(--surface);color:var(--c-known);border-color:var(--c-known);} /* ve slovníku, odznačené → nech být */
   .langsq.exists.armed{background:var(--c-known);color:#15200a;border-color:var(--c-known);} /* ve slovníku, vybrané → ＋ vrátí na Neumím */
   .langsq.saved{background:var(--c-known);color:#15200a;border-color:var(--c-known);cursor:default;}
-  .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:64px;height:64px;font-size:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
+  #cardSay{width:48px;height:48px;font-size:27px;display:flex;align-items:center;justify-content:center;}
   .cardpron{margin-top:8px;font-size:15px;color:#e3d7c4;min-height:20px;}
   .cardpron .pron-txt{border-bottom:1px dashed var(--line);}
   .cardpron input{width:170px;text-align:center;font-size:15px;padding:6px 10px;}
@@ -272,7 +273,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v104</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v105</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -696,7 +697,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v104';
+const APP_VER='v105';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
