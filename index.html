@@ -116,7 +116,7 @@
   .langsq.exists{background:var(--surface);color:var(--c-known);border-color:var(--c-known);} /* ve slovníku, odznačené → nech být */
   .langsq.exists.armed{background:var(--c-known);color:#15200a;border-color:var(--c-known);} /* ve slovníku, vybrané → ＋ vrátí na Neumím */
   .langsq.saved{background:var(--c-known);color:#15200a;border-color:var(--c-known);cursor:default;}
-  .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;}
+  .flash .say{position:absolute;top:12px;left:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:64px;height:64px;font-size:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .cardpron{margin-top:8px;font-size:15px;color:#e3d7c4;min-height:20px;}
   .cardpron .pron-txt{border-bottom:1px dashed var(--line);}
   .cardpron input{width:170px;text-align:center;font-size:15px;padding:6px 10px;}
@@ -272,7 +272,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v102</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v104</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -696,7 +696,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v102';
+const APP_VER='v104';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -1119,6 +1119,8 @@ function styleCardWord(){
 }
 function toggleFunFont(){ settings.funFont=settings.funFont?0:1; saveSettings(); updateFunFontBtn(); styleCardWord(); }
 function updateFunFontBtn(){ const b=document.getElementById('funFontBtn'); if(b) b.textContent=settings.funFont?'Zapnuto':'Vypnuto'; }
+function toggleContNew(){ settings.contNew=settings.contNew?0:1; saveSettings(); updateContNewBtn(); }
+function updateContNewBtn(){ const b=document.getElementById('contNewBtn'); if(b) b.textContent=settings.contNew?'Zapnuto':'Vypnuto'; }
 
 /* ---------- Automatické ukládání do pevného souboru (File System Access API) ---------- */
 let autoHandle=null, autoReady=false, autoTimer=null;
@@ -1385,7 +1387,7 @@ let nReviews = (function(){ try{ return parseInt(localStorage.getItem(KEY+'_nrev
 function saveNRev(){ try{ localStorage.setItem(KEY+'_nrev',String(nReviews)); }catch(e){} }
 // Adjustable learning parameters (sliders in Nastavení)
 const PACE_BASE={gapNeumim:3,gapUmim:20}; // poměr, který „Spád" proporčně škáluje
-const SETTINGS_DEFAULTS={pace:100,gapNeumim:3,gapUmim:20,umimGrow:200,maxHard:2,workSet:8,retention:85,funFont:1,sectionSort:'alpha'};
+const SETTINGS_DEFAULTS={pace:100,gapNeumim:3,gapUmim:20,umimGrow:200,maxHard:2,workSet:8,retention:85,funFont:1,contNew:1,sectionSort:'alpha'};
 const SETTING_DEFS=[
   {key:'workSet',label:'Pestrost rotace',desc:'Kolik různých slovíček se drží naráz v aktivním drilu (víc = pestřejší a náročnější)',min:4,max:24,step:1},
   {key:'retention',label:'Jak natvrdo to umět',desc:'Vyšší = kratší odstupy a jistější paměť (víc opakování); nižší = delší odstupy a lehčí zátěž velké sady',min:80,max:90,step:1,fmt:'pct'}
@@ -1523,6 +1525,13 @@ function nextCard(){
     const block=new Set(recentWids.slice(recentWids.length-gap));
     const pool=all.filter(c=> !block.has(c.w.id));
     if(pool.length) pick=pickNext(pool);
+  }
+  // plynulý přísun: než session skončit, zaveď nejnovější nenaučené slovo (dokud nějaké je)
+  if(!pick && settings.contNew){
+    const block=new Set(recentWids); let pk=null;
+    for(const c of all){ const st=c.st; if(!schSeen(st)&&!st.retired&&!block.has(c.w.id)){ if(!pk||(c.w.added||0)>(pk.w.added||0)) pk=c; } }
+    if(!pk) for(const c of all){ const st=c.st; if(!schSeen(st)&&!st.retired){ if(!pk||(c.w.added||0)>(pk.w.added||0)) pk=c; } }
+    pick=pk;
   }
   if(!pick){currentCard=null;return false;}
   const wasNew=!schSeen(pick.st);
@@ -1785,8 +1794,8 @@ function renderSettings(){
       '</div>'+
     '</div>';
   const adv=SETTING_DEFS.map(advRow).join('');
-  document.getElementById('settingsList').innerHTML=adv+'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);">'+'<div style="flex:1;"><div style="font-weight:600;">Pestré písmo při učení</div>'+'<div style="font-size:13px;color:var(--ink-faint);">Náhodný font, velikost a barva slovíčka – pomáhá zapamatování.</div></div>'+'<button class="btn ghost" id="funFontBtn" style="flex:0 0 auto;min-width:84px;margin:0;" onclick="toggleFunFont()"></button></div>'+'<div style="padding:12px 0;border-top:1px solid var(--line);">'+'<button class="btn ghost" id="pronFillBtn" style="width:100%;margin:0;" onclick="backfillPron()">🔤 Doplnit chybějící výslovnosti</button>'+'<div style="font-size:13px;color:var(--ink-faint);margin-top:6px;">Stáhne IPA z anglického slovníku ke slovům, kde výslovnost chybí.</div></div>';
-  updateFunFontBtn();
+  document.getElementById('settingsList').innerHTML=adv+'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);">'+'<div style="flex:1;"><div style="font-weight:600;">Pestré písmo při učení</div>'+'<div style="font-size:13px;color:var(--ink-faint);">Náhodný font, velikost a barva slovíčka – pomáhá zapamatování.</div></div>'+'<button class="btn ghost" id="funFontBtn" style="flex:0 0 auto;min-width:84px;margin:0;" onclick="toggleFunFont()"></button></div>'+'<div style="padding:12px 0;border-top:1px solid var(--line);">'+'<button class="btn ghost" id="pronFillBtn" style="width:100%;margin:0;" onclick="backfillPron()">🔤 Doplnit chybějící výslovnosti</button>'+'<div style="font-size:13px;color:var(--ink-faint);margin-top:6px;">Stáhne IPA z anglického slovníku ke slovům, kde výslovnost chybí.</div></div>'+'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);">'+'<div style="flex:1;"><div style="font-weight:600;">Plynulý přísun nových slov</div>'+'<div style="font-size:13px;color:var(--ink-faint);">Dokud jsou nenaučená slova, učení nekončí a nabízí další (víc opakování později).</div></div>'+'<button class="btn ghost" id="contNewBtn" style="flex:0 0 auto;min-width:84px;margin:0;" onclick="toggleContNew()"></button></div>';
+  updateFunFontBtn(); updateContNewBtn();
   updateWeightInfo();
   updateSectionSortUI();
   renderSectionMgr();
