@@ -272,7 +272,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v100</span></div>
+  <div class="brand"><h1>Slov<span>í</span>čka</h1><span class="tag" id="verTag">v102</span></div>
   <div class="langbar" id="langbar"></div>
 </header>
 
@@ -696,7 +696,7 @@ function refreshLabels(){
   const lb=document.getElementById('ldB');if(lb)lb.textContent='Česky → '+L.adj;
   const ee=document.getElementById('editEnLabel');if(ee)ee.textContent=L.adj;
 }
-const APP_VER='v100';
+const APP_VER='v102';
 
 /* ---------- Translate engine: Google Translate (free gtx) only ---------- */
 let current=null; // {source,target,from,to}
@@ -884,6 +884,7 @@ function addEntry(lang,cs,foreign,pos,pron,section){
   migrateWord(nw); words.unshift(nw);
   save();
   ensureExamples(nw);   // při uložení rovnou dohledej fráze
+  ensurePron(nw);       // i výslovnost
   if(lang===activeLang && !document.getElementById('view-list').classList.contains('hidden'))renderList();
   return 'ok';
 }
@@ -1171,6 +1172,50 @@ async function autoSaveInit(){
   try{ const h=await idbGet('autoHandle'); if(h){ autoHandle=h; autoReady=(await h.queryPermission({mode:'readwrite'}))==='granted'; } }catch(e){}
   updateAutoUI();
 }
+/* ---------- Doplnění výslovnosti (IPA z anglického slovníku dictionaryapi.dev, bez AI) ---------- */
+async function fetchDictPron(word){
+  const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word.toLowerCase()));
+  if(r.status===404) return '';                 // slovo není ve slovníku → odpověď, žádná IPA
+  if(!r.ok) throw new Error('http');
+  const d=await r.json();
+  for(const e of d){
+    if(e.phonetic && e.phonetic.trim()) return e.phonetic.trim();
+    for(const p of (e.phonetics||[])){ if(p && p.text && p.text.trim()) return p.text.trim(); }
+  }
+  return '';
+}
+// stáhne IPA JEDNOU, uloží ke slovu, u nenalezených příznak pronTried (už nezkouší dokola)
+async function ensurePron(w){
+  if(w.pron && String(w.pron).trim()) return;
+  if(w.pronTried) return;
+  if(w.lang!=='en' || String(w.foreign).trim().split(/\s+/).length>1){ w.pronTried=true; save(); return; } // slovník je EN a jednoslovný
+  if(!navigator.onLine) return;
+  let ipa='', resp=false;
+  try{ ipa=await fetchDictPron(w.foreign); resp=true; }catch(e){}
+  if(ipa){ w.pron=ipa; save(); }
+  else if(resp){ w.pronTried=true; save(); }
+  else { w.pronTry=(w.pronTry||0)+1; if(w.pronTry>=3) w.pronTried=true; save(); }   // síť selhala → po pár pokusech vzdát
+}
+let pronBusy=false;
+// hromadné doplnění všech chybějících (tlačítko v Nastavení)
+async function backfillPron(){
+  const btn=document.getElementById('pronFillBtn');
+  if(pronBusy) return;
+  if(!navigator.onLine){ toast('Jsi offline'); return; }
+  const todo=words.filter(w=> w.lang==='en' && !(w.pron&&String(w.pron).trim()) && !w.pronTried && String(w.foreign).trim().split(/\s+/).length===1);
+  if(!todo.length){ toast('Není co doplnit'); return; }
+  pronBusy=true; let done=0, found=0;
+  for(const w of todo){
+    if(!navigator.onLine) break;
+    await ensurePron(w);
+    if(w.pron && String(w.pron).trim()) found++;
+    done++;
+    if(btn) btn.textContent='Doplňuji… '+done+'/'+todo.length;
+    await new Promise(r=>setTimeout(r,250));     // šetrně k API
+  }
+  pronBusy=false; if(btn) btn.textContent='🔤 Doplnit chybějící výslovnosti';
+  renderList(); toast('Hotovo: doplněno '+found+' z '+todo.length);
+}
 async function exportWords(){
   if(!words.length){toast('Nejsou žádná slovíčka');return;}
   const _t=new Date(),_p=n=>String(n).padStart(2,'0');
@@ -1267,7 +1312,8 @@ function mergeWords(incoming){
       const newLR=Math.max(dst(norm,'cs').lastReviewed||0, dst(norm,'fw').lastReviewed||0);
       const curLR=Math.max(dst(cur,'cs').lastReviewed||0, dst(cur,'fw').lastReviewed||0);
       if(newLR > curLR){
-        map.set(k,{...norm, id:cur.id, added:Math.min(cur.added||norm.added, norm.added||cur.added), sections:secs});
+        map.set(k,{...norm, id:cur.id, added:Math.min(cur.added||norm.added, norm.added||cur.added), sections:secs,
+          pron:(norm.pron||cur.pron||''), pos:(norm.pos||cur.pos||'')});  // zachovej výslovnost/slovní druh, když je import nemá
       }else{
         cur.sections=secs;
         if(grew && dst(norm,'cs').box===1){ DIRS.forEach(dr=>{const s=dst(cur,dr);s.box=1;s.strength=0;s.nextAt=0;}); } // re-import do nové sekce → zpět na Neumím
@@ -1560,7 +1606,12 @@ function showingForeign(){return currentCard && (((currentDir==='fw')&&!flipped)
 function renderCardPron(){
   const el=document.getElementById('cardPron');if(!el)return;
   const p=showingForeign()?currentCard.pron:'';
-  if(!p){el.classList.add('hidden');el.innerHTML='';return;}
+  if(!p){
+    el.classList.add('hidden');el.innerHTML='';
+    if(showingForeign() && currentCard && !currentCard.pronTried)
+      ensurePron(currentCard).then(()=>{ if(currentCard && showingForeign() && currentCard.pron) renderCardPron(); });
+    return;
+  }
   el.classList.remove('hidden');
   el.innerHTML='<span class="pron-txt">['+esc(p)+']</span>';
 }
@@ -1734,7 +1785,7 @@ function renderSettings(){
       '</div>'+
     '</div>';
   const adv=SETTING_DEFS.map(advRow).join('');
-  document.getElementById('settingsList').innerHTML=adv+'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);">'+'<div style="flex:1;"><div style="font-weight:600;">Pestré písmo při učení</div>'+'<div style="font-size:13px;color:var(--ink-faint);">Náhodný font, velikost a barva slovíčka – pomáhá zapamatování.</div></div>'+'<button class="btn ghost" id="funFontBtn" style="flex:0 0 auto;min-width:84px;margin:0;" onclick="toggleFunFont()"></button></div>';
+  document.getElementById('settingsList').innerHTML=adv+'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);">'+'<div style="flex:1;"><div style="font-weight:600;">Pestré písmo při učení</div>'+'<div style="font-size:13px;color:var(--ink-faint);">Náhodný font, velikost a barva slovíčka – pomáhá zapamatování.</div></div>'+'<button class="btn ghost" id="funFontBtn" style="flex:0 0 auto;min-width:84px;margin:0;" onclick="toggleFunFont()"></button></div>'+'<div style="padding:12px 0;border-top:1px solid var(--line);">'+'<button class="btn ghost" id="pronFillBtn" style="width:100%;margin:0;" onclick="backfillPron()">🔤 Doplnit chybějící výslovnosti</button>'+'<div style="font-size:13px;color:var(--ink-faint);margin-top:6px;">Stáhne IPA z anglického slovníku ke slovům, kde výslovnost chybí.</div></div>';
   updateFunFontBtn();
   updateWeightInfo();
   updateSectionSortUI();
